@@ -7,15 +7,6 @@ body {
   color: #2c3e50;
 }
 
-/* Header styling */
-header { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #dee2e6;
-}
 
 header h1 {
   color: #2c3e50;
@@ -138,7 +129,7 @@ th {
 }
 
 .btn-secondary {
-  background-color: #95a5a6;
+  background-color: #cff133;
   color: white;
 }
 
@@ -387,7 +378,7 @@ th {
 }
 
 .badge.regular {
-  background-color: #95a5a6;
+  background-color: #5e9bf1;
   color: white;
 }
 
@@ -995,3 +986,761 @@ th {
     width: 100%;
   }
 }
+/* ===== Header con logo a la izquierda y título centrado ===== */
+:root{
+  --brand:#3498db;      /* cambia por el azul del escudo si quieres */
+  --brand-2:#f0c419;    /* acento (dorado del escudo, por ej.) */
+  --header-text:#ffffff;
+}
+
+.site-header{
+  background: var(--brand);
+  color: var(--header-text);
+  border-bottom: 4px solid var(--brand-2);
+  margin-bottom: 2rem;
+}
+
+.site-header .header-bar{
+  max-width: 1600px;        /* coincide con tu layout */
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* logo | centro | derecha */
+  align-items: center;
+  gap: 12px;
+}
+
+/* 🔧 Logo SIEMPRE como <img>, NO como background */
+.site-header .logo{ display:flex; align-items:center; }
+.site-header .logo img{
+  height: 56px;             /* controla tamaño visible */
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Título centrado de verdad */
+.site-header .brand-wrap{
+  justify-self: center;
+  text-align: center;
+  line-height: 1.15;
+}
+.site-header .brand{
+  margin: 0;
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 800;
+  color: var(--header-text);
+}
+.site-header .brand-sub{
+  margin: 2px 0 0;
+  font-size: clamp(.9rem, 1.8vw, 1.05rem);
+  color: var(--header-text);
+  opacity: .95;
+}
+
+.site-header .main-nav{
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 6px 16px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+
+/* Enlaces sobre header azul */
+.site-header .main-nav a{
+  color: var(--header-text);
+  text-decoration: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
+  transition: background .2s ease, transform .05s ease;
+}
+.site-header .main-nav a:hover,
+.site-header .main-nav a:focus-visible{
+  background: rgba(255,255,255,0.20);
+  transform: translateY(-1px);
+}
+.site-header .main-nav a.active{
+  color: #1f2937;
+  background-color: var(--brand-2);
+  border-color: transparent;
+  font-weight: bold;
+}
+
+/* Responsive */
+@media (max-width: 768px){
+  .site-header .logo img{ height: 44px; }
+}
+
+/* 1) Header fijo (opcional) */
+.site-header{ position: sticky; top: 0; z-index: 1000; }
+
+/* 2) Sombra suave al header para separarlo del contenido */
+.site-header{ box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+
+/* 3) Botones de la barra tipo “pill” (coherente con tu screenshot) */
+.site-header .main-nav a{
+  border-radius: 999px;
+  line-height: 1;
+}
+.site-header .main-nav a:not(.active){
+  /* botón “outline” celeste suave */
+  background: rgba(255,255,255,0.10);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+}
+.site-header .main-nav a:not(.active):hover{
+  background: rgba(255,255,255,0.20);
+}
+
+/* 4) Quitar la línea divisoria si no la quieres */
+.site-header .main-nav{ border-top: none; }
+
+/* 5) Ajuste tipográfico del título (ligeramente más grande y con sombra sutil) */
+.site-header .brand{
+  text-shadow: 0 1px 0 rgba(0,0,0,.08);
+  letter-spacing: .2px;
+}
+
+/* 6) Logo un pelín más pequeño en pantallas medianas */
+@media (max-width: 1024px){
+  .site-header .logo img{ height: 50px; }
+}
+
+/* Grid del header: logo (auto) | título (1fr) | derecha (auto) */
+.site-header .header-bar{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+/* IZQUIERDA: logo + nombre colegio pequeño al lado */
+.logo-block{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-header .logo img{
+  height: 56px; /* ajusta si lo quieres más chico/grande */
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.school-name{
+  font-size: 0.95rem;     /* pequeño */
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--header-text);
+  opacity: .95;
+  white-space: nowrap;    /* evita salto de línea */
+}
+
+/* CENTRO: título grande realmente centrado */
+.title-center{
+  text-align: center;
+}
+.site-header .brand{
+  margin: 0;
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem); /* más grande que antes */
+  font-weight: 800;
+  color: var(--header-text);
+  letter-spacing: .2px;
+}
+
+/* Responsive: reduce logo y oculta el nombre si no cabe */
+@media (max-width: 640px){
+  .site-header .logo img{ height: 44px; }
+  .school-name{ display: none; } /* opcional: oculta en móviles */
+}
+/* ==== CENTRADO PERFECTO DEL TÍTULO ==== */
+.site-header .header-bar{
+  position: relative;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* centra el contenido por defecto */
+}
+
+/* IZQUIERDA: logo + nombre del colegio pequeño, anclados */
+.logo-block{
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-header .logo img{
+  height: 52px;              /* ajusta si lo quieres más pequeño/grande */
+  width: auto;
+  object-fit: contain;
+}
+
+.school-name{
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--header-text);
+  opacity: .95;
+  white-space: nowrap;
+}
+
+/* CENTRO: título grande y de alto contraste */
+.title-center{
+  text-align: center;
+  pointer-events: none;      /* evita que el centro “capture” clics */
+}
+.site-header .brand{
+  margin: 0;
+  font-size: clamp(1.9rem, 3.6vw, 2.5rem);  /* más grande */
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: var(--header-text);
+  text-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+
+/* (opcional) derecha: si algún día pones botones/acciones en el header */
+.header-right{
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Nav debajo del header (si lo usas ahí) sin línea divisoria */
+.site-header .main-nav{ border-top: none; }
+
+/* Ajustes responsivos */
+@media (max-width: 900px){
+  /* Puedes agregar reglas responsivas aquí si lo necesitas */
+}
+
+/* === PALETA === */
+:root{
+  --brand: #3498db;   /* azul principal */
+  --brand-2: #f0c419; /* acento/dorado */
+  --header-text: #ffffff;
+}
+
+/* === BARRA SUPERIOR === */
+.site-header{
+  background: var(--brand);
+  color: var(--header-text);
+  border-bottom: 4px solid var(--brand-2);
+  position: sticky; top: 0; z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+
+  /* franja a ancho pantalla */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* contenedor centrado y con una sola línea */
+.site-header .header-bar{
+  position: relative;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* centra el título */
+  gap: 16px;
+  min-height: 68px;          /* altura confortable para una sola línea */
+}
+
+/* IZQUIERDA: logo + nombre */
+.logo-block{
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.site-header .logo img{
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+}
+.school-name{
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--header-text);
+  white-space: nowrap;
+  opacity: .95;
+}
+
+/* CENTRO: título */
+.title-center{ text-align: center; pointer-events: none; }
+.site-header .brand{
+  margin: 0;
+  font-size: clamp(1.9rem, 3.6vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: var(--header-text);
+  text-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+
+/* DERECHA: NAV en la misma línea */
+.header-actions{
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-actions a{
+  color: var(--header-text);
+  text-decoration: none;
+  padding: .5rem .9rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+  line-height: 1;
+  transition: background .2s, transform .05s;
+}
+.header-actions a:hover,
+.header-actions a:focus-visible{
+  background: rgba(255,255,255,.20);
+  transform: translateY(-1px);
+}
+.header-actions a.active{
+  color: #1f2937;
+  background: var(--brand-2);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px){
+  .site-header .logo img{ height: 46px; }
+}
+@media (max-width: 700px){
+  /* En móviles el nav baja a segunda línea para no apretar el título */
+  .header-actions{
+    position: static;
+    transform: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .site-header .header-bar{
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 10px;
+    min-height: unset;
+  }
+  .school-name{ display: none; } /* opcional: para ganar espacio */
+}
+
+/* Quitar la línea blanca bajo los botones del header */
+.header-actions{
+  border: 0 !important;
+  box-shadow: none !important;
+  padding-bottom: 0;          /* evita que aparezca una línea por colapso */
+}
+
+/* Si algún estilo antiguo agregó un pseudo-elemento como separador, lo anulamos */
+.header-actions::before,
+.header-actions::after{
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+}
+
+/* Asegura que el contenedor principal tampoco tenga borde inferior */
+.site-header .header-bar{
+  border: 0 !important;
+  padding-bottom: 12px;       /* altura cómoda sin “subrayado” visual */
+}
+
+/* Los links tampoco deben tener decoración inferior */
+.header-actions a{
+  text-decoration: none !important;
+  border-bottom: 0 !important;
+}
+
+/* ====== OVERRIDES FINALES PARA EL HEADER (pegar al final del archivo) ====== */
+
+/* Paleta coherente con el escudo */
+:root{
+  --brand: #1f64d1;   /* azul rey */
+  --brand-2: #f0c419; /* dorado */
+  --header-text: #ffffff;
+}
+
+/* Barra superior a ancho completo y con sombra suave */
+.site-header{
+  background: var(--brand) !important;
+  color: var(--header-text) !important;
+  border-bottom: 4px solid var(--brand-2) !important;
+  position: sticky; top: 0; z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  width: 100vw;                         /* franja full-bleed */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* Contenedor del header en GRID: izq | centro | der */
+.site-header .header-bar{
+  max-width: 1600px; margin: 0 auto; padding: 12px 16px;
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center; column-gap: 16px; row-gap: 8px;
+  min-height: 68px;
+  /* anula estilos anteriores que lo ponían absolute/flex centrado */
+  position: static !important;
+  justify-content: normal !important;
+  border: 0 !important;                 /* quita cualquier línea */
+  padding-bottom: 12px !important;
+}
+
+/* IZQUIERDA: logo + nombre del colegio */
+.logo-block{
+  display: inline-flex !important;
+  align-items: center; gap: 10px;
+  justify-self: start;
+  position: static !important;
+  transform: none !important;
+  left: auto !important; top: auto !important;
+}
+.site-header .logo img{ height: 52px; width: auto; object-fit: contain; }
+.school-name{
+  font-size: .95rem; font-weight: 700; color: var(--header-text);
+  white-space: nowrap; opacity: .95;
+}
+
+/* CENTRO: título grande, realmente centrado */
+.title-center{
+  text-align: center; justify-self: center; min-width: 0;
+  pointer-events: auto !important;       /* por si quedó en none */
+}
+.site-header .brand{
+  margin: 0; color: var(--header-text);
+  font-weight: 800; letter-spacing: .2px;
+  text-shadow: 0 1px 0 rgba(0,0,0,.08);
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  white-space: nowrap;
+}
+
+/* DERECHA: navegación del header
+   IMPORTANTE: reseteamos TODO lo heredado de la clase global ".header-actions" */
+.site-header .header-actions{
+  all: unset;                            /
+}
+
+/* ===== FIX DEFINITIVO: forzar grid y quitar absolutes en el header ===== */
+
+/* Color más oscuro (opcional) */
+:root{
+  --brand: #1f64d1;      /* azul rey */
+  --brand-2: #f0c419;    /* dorado */
+  --header-text: #ffffff;
+}
+
+/* 1) La barra SIEMPRE en grid: logo | título | nav  */
+.site-header .header-bar{
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  justify-content: initial !important;
+  position: static !important;
+  column-gap: 16px; row-gap: 8px;
+  border: 0 !important;
+}
+
+/* 2) Quitar posicionamiento absoluto heredado */
+.site-header .logo-block,
+.site-header .header-actions,
+.site-header .title-center{
+  position: static !important;
+  left: auto !important; right: auto !important; top: auto !important;
+  transform: none !important;
+}
+
+/* 3) Colocación en columnas del grid */
+.site-header .logo-block{ justify-self: start !important; display: inline-flex !important; align-items: center; gap: 10px; }
+.site-header .title-center{ justify-self: center !important; text-align: center; min-width: 0; }
+.site-header .header-actions{ justify-self: end !important; display: flex !important; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* 4) Estilo de los botones del header (píldoras) */
+.site-header .header-actions a{
+  color: var(--header-text) !important;
+  text-decoration: none !important;
+  padding: .5rem .9rem; border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+  line-height: 1; transition: background .2s, transform .05s;
+  border: 0 !important;
+}
+.site-header .header-actions a:hover,
+.site-header .header-actions a:focus-visible{
+  background: rgba(255,255,255,.20);
+  transform: translateY(-1px);
+}
+.site-header .header-actions a.active{
+  color: #1f2937 !important;
+  background: var(--brand-2) !important;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+/* 5) Tipografía del título centrado */
+.site-header .brand{
+  margin: 0; color: var(--header-text);
+  font-weight: 800; letter-spacing: .2px;
+  text-shadow: 0 1px 0 rgba(0,0,0,.08);
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  white-space: nowrap;
+}
+
+/* 6) Responsive: apilar sin solaparse en pantallas estrechas */
+@media (max-width: 720px){
+  .site-header .header-bar{ grid-template-columns: 1fr !important; }
+  .site-header .logo-block,
+  .site-header .title-center,
+  .site-header .header-actions{ justify-self: center !important; }
+  .school-name{ display: none; } /* opcional para ganar espacio */
+}
+/* ==== FIX: Header sin superposición y con una sola línea armónica ==== */
+
+/* 0) Corregir reset del nav derecho (en tu archivo hay 'all: unset; /' que rompe CSS) */
+.site-header .header-actions{
+  position: static !important;           /* nada absoluto */
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap;
+  justify-self: end !important;          /* esquina derecha del grid */
+  /* sin bordes ni líneas raras */
+  border: 0 !important;
+  box-shadow: none !important;
+  padding-bottom: 0 !important;
+}
+
+/* 1) Asegurar grid correcto del header */
+.site-header .header-bar{
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important; /* logo | título | nav */
+  align-items: center !important;
+  column-gap: 16px;
+  row-gap: 8px;
+  position: static !important;           /* nada absoluto aquí */
+}
+
+/* 2) Evitar que el título se desborde debajo de los botones */
+.site-header .title-center{
+  min-width: 0;                          /* permite que 1fr recorte al centro */
+  overflow: hidden;                      /* recorta lo que sobren */
+  text-align: center;
+  justify-self: center !important;
+}
+.site-header .brand{
+  display: block;
+  margin: 0;
+  white-space: nowrap;                   /* 1 línea */
+  overflow: hidden;                      /* recorte visual */
+  text-overflow: ellipsis;               /* … si no alcanza */
+  color: var(--header-text);
+  font-weight: 800;
+  letter-spacing: .2px;
+  text-shadow: 0 1px 0 rgba(0,0,0,.08);
+  /* tamaño cómodo que no choqua con pills */
+  font-size: clamp(1.6rem, 3.0vw, 2.3rem);
+}
+
+/* 3) Ajustes suaves en tablets (reduce un poco el título y padding de los pills) */
+@media (max-width: 1200px){
+  .site-header .brand{ font-size: clamp(1.5rem, 2.6vw, 2.0rem); }
+  .site-header .header-actions a{ padding: .45rem .8rem; }
+}
+
+/* 4) En móviles, apilar para 0% superposiciones */
+@media (max-width: 720px){
+  .site-header .header-bar{ grid-template-columns: 1fr !important; }
+  .site-header .logo-block,
+  .site-header .title-center,
+  .site-header .header-actions{ justify-self: center !important; }
+  .school-name{ display: none; }         /* ganar espacio, opcional */
+}
+/* ===== Header compacto solo para ADMIN (staff) ===== */
+.is-admin .title-center{
+  display: none !important;          /* oculta el título solo a admin */
+}
+
+.is-admin .site-header .header-bar{
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;  /* logo | nav */
+  align-items: center !important;
+  column-gap: 16px;
+}
+
+/* los botones del header un pelín más compactos para que quepan mejor */
+.is-admin .site-header .header-actions{
+  justify-self: end !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap;
+}
+
+.is-admin .site-header .header-actions a{
+  padding: .45rem .8rem !important;
+}
+
+/* ===== Colores por ESTADO de la reserva ===== */
+:root{
+  --resv-past-bg:#f4f5f7;    --resv-past-ac:#95a5a6;  /* pasado: gris suave */
+  --resv-today-bg:#eaf4ff;   --resv-today-ac:#1f64d1; /* hoy: azul rey */
+  --resv-future-bg:#eaf7ef;  --resv-future-ac:#27ae60;/* futura: verde */
+}
+
+/* Base de tarjeta (aprovecha tu .reservation-card actual) */
+.reservation-card{
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  transition: transform .12s ease, box-shadow .12s ease;
+  background: var(--card-bg, #fff);
+  border-left: 8px solid var(--accent, #3498db);
+}
+.reservation-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.10);
+}
+
+/* Encabezado y fecha */
+.reservation-header{ border-bottom: 1px solid rgba(0,0,0,.06); margin-bottom:.5rem; }
+.reservation-header h3{ font-weight: 700; }
+.reservation-date{ color: var(--accent); }
+
+/* Estados */
+.reservation-card.is-past  { --card-bg: var(--resv-past-bg);  --accent: var(--resv-past-ac);  }
+.reservation-card.is-today { --card-bg: var(--resv-today-bg); --accent: var(--resv-today-ac); }
+.reservation-card.is-future{ --card-bg: var(--resv-future-bg);--accent: var(--resv-future-ac); }
+
+/* (Opcional) alternar tonos dentro de cada estado para variedad sutil */
+.reservation-card.is-future:nth-child(even){ --card-bg:#f1fbf5; }
+.reservation-card.is-today:nth-child(even) { --card-bg:#f1f7ff; }
+
+/* ===== Reservas - Look & Feel más vivo ===== */
+:root{
+  --brand:#1f64d1;   /* azul rey */
+  --accent:#f0c419;  /* dorado */
+  --brand-10:#eaf2ff; /* azul muy claro */
+  --text-strong:#19324d;
+}
+
+.form-container{
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #dbe7ff;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(31,100,209,.12);
+}
+
+.form-container h2{
+  color: var(--text-strong);
+  font-weight: 800;
+  letter-spacing: .2px;
+  position: relative;
+  display: inline-block;
+  padding-right: .6rem;
+}
+.form-container h2::after{
+  content:"";
+  display:block;
+  height:6px;
+  width: 60%;
+  background: linear-gradient(90deg,var(--accent),transparent);
+  border-radius: 4px;
+  margin-top: .35rem;
+}
+
+/* Secciones del formulario */
+.form-section{
+  background: #fff;
+  border: 1px solid #dbe7ff;
+  border-left: 6px solid var(--brand);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(31,100,209,.06);
+}
+.form-section h3{
+  margin: 0 0 .75rem 0;
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+/* Etiquetas e inputs */
+.form-group label{
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.form-group select,
+.form-group input{
+  border: 1.5px solid #cfe0ff;
+  border-radius: 10px;
+  background: #fff;
+  transition: box-shadow .15s, border-color .15s, transform .02s;
+}
+.form-group select:focus,
+.form-group input:focus{
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(31,100,209,.18);
+}
+
+/* Píldora con el horario del bloque (si la usas abajo) */
+.block-hint{
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .45rem .7rem;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .95rem;
+  box-shadow: 0 4px 12px rgba(31,100,209,.25);
+}
+.block-hint::before{
+  content: "⏱";
+  font-size: 1rem;
+}
+
+/* Tarjetas de materiales con fondo suavemente azul */
+.materials-grid .material-item{
+  background: var(--brand-10);
+  border: 1px solid #dbe7ff;
+  border-radius: 10px;
+}
+
+/* Botones */
+.btn.btn-primary{
+  background: var(--brand);
+  border: none;
+  box-shadow: 0 6px 14px rgba(31,100,209,.25);
+}
+.btn.btn-primary:hover{ filter: brightness(1.05); }
+
+.btn.btn-secondary{
+  background: #3c97ec;
+  border: none;
+}
+.btn.btn-secondary:hover{ filter: brightness(1.05); }
+
+/* Espaciado entre columnas de hora */
+.form-row{ gap: 1.25rem; }

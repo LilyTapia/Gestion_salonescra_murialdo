@@ -10,7 +10,7 @@
       <h3>Información de la Reserva</h3>
       
       <div class="form-group">
-        <label for="{{ form.room.id_for_label }}">{{ form.room.label }}</label>
+        <label for="{{ form.room.id_for_label }}">Salón</label>
         {{ form.room }}
         {% if form.room.errors %}
           <div class="error-messages">
@@ -22,7 +22,7 @@
       </div>
       
       <div class="form-group">
-        <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+        <label for="{{ form.date.id_for_label }}">Fecha</label>
         {{ form.date }}
         {% if form.date.errors %}
           <div class="error-messages">
@@ -31,11 +31,20 @@
             {% endfor %}
           </div>
         {% endif %}
+        <small class="help-text">Elige la fecha para cargar los bloques disponibles de ese día.</small>
       </div>
+
+      <!-- === NUEVO: selector de bloque académico === -->
+      <div class="form-group">
+        <label for="block-select"><strong>Bloque</strong></label>
+        <select id="block-select" class="filter-select" required></select>
+        <small id="block-help" class="help-text"></small>
+      </div>
+      <!-- === /NUEVO === -->
       
       <div class="form-row">
         <div class="form-group">
-          <label for="{{ form.start_time.id_for_label }}">{{ form.start_time.label }}</label>
+          <label for="{{ form.start_time.id_for_label }}">Inicio</label>
           {{ form.start_time }}
           {% if form.start_time.errors %}
             <div class="error-messages">
@@ -47,7 +56,7 @@
         </div>
         
         <div class="form-group">
-          <label for="{{ form.end_time.id_for_label }}">{{ form.end_time.label }}</label>
+          <label for="{{ form.end_time.id_for_label }}">Término</label>
           {{ form.end_time }}
           {% if form.end_time.errors %}
             <div class="error-messages">
@@ -80,4 +89,91 @@
     </div>
   </form>
 </div>
+
+<!-- ==================== LÓGICA DE BLOQUES (JS) ==================== -->
+<script>
+  // Horarios por bloque
+  const BLOQUES_BASE = [
+    ["08:00","08:45"], // 1
+    ["08:45","09:30"], // 2
+    ["09:50","10:35"], // 3
+    ["10:35","11:20"], // 4
+    ["11:35","12:20"], // 5
+    ["12:20","13:05"], // 6
+    ["13:05","13:50"], // 7
+    ["13:50","14:35"], // 8
+    ["14:35","15:20"], // 9
+    ["15:20","16:05"], // 10
+    ["16:05","16:50"], // 11
+  ];
+  // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+  const SCHEDULE = {
+    1: BLOQUES_BASE,                                  // Lunes
+    2: BLOQUES_BASE,                                  // Martes
+    3: BLOQUES_BASE,                                  // Miércoles
+    4: [...BLOQUES_BASE, ["17:00","18:00"]],          // Jueves con 12º bloque
+    5: BLOQUES_BASE.slice(0, 6),                      // Viernes solo 1–6
+  };
+
+  // Helpers fecha -> día de semana
+  function parseISO(str){ const [y,m,d]=str.split("-").map(Number); return new Date(y, m-1, d); }
+  function weekday(str){ return str ? parseISO(str).getDay() : null; }
+
+  // Campos (asumiendo IDs por defecto de Django)
+  const dateInput   = document.getElementById("id_date");
+  const startInput  = document.getElementById("id_start_time");
+  const endInput    = document.getElementById("id_end_time");
+  const blockSelect = document.getElementById("block-select");
+  const blockHelp   = document.getElementById("block-help");
+
+  // Evitar edición manual: las horas se derivan del bloque
+  [startInput, endInput].forEach(i => { if (i) i.readOnly = true; });
+
+  function setTimes(dayIdx, idx){
+    const [ini, fin] = SCHEDULE[dayIdx][idx];
+    startInput.value = ini;
+    endInput.value   = fin;
+    blockHelp.textContent = `Horario del bloque ${idx+1}: ${ini} – ${fin}`;
+  }
+
+  function loadBlocksFor(dayIdx){
+    blockSelect.innerHTML = "";
+    if (!SCHEDULE[dayIdx]){
+      blockSelect.add(new Option("No hay bloques disponibles", "", true, true));
+      blockSelect.disabled = true;
+      startInput.value = ""; endInput.value = "";
+      blockHelp.textContent = "Selecciona un día hábil (lunes a viernes).";
+      return;
+    }
+    blockSelect.disabled = false;
+    SCHEDULE[dayIdx].forEach((range, i) => {
+      blockSelect.add(new Option(`Bloque ${i+1}`, String(i+1)));
+    });
+    blockSelect.selectedIndex = 0;
+    setTimes(dayIdx, 0);
+  }
+
+  if (dateInput){
+    // Cuando cambia la fecha
+    dateInput.addEventListener("change", () => {
+      const d = weekday(dateInput.value);
+      loadBlocksFor(d);
+    });
+    // Si el form recargó con errores y ya hay fecha, cargar bloques
+    if (dateInput.value){
+      loadBlocksFor(weekday(dateInput.value));
+    }else{
+      // Vacío por defecto
+      blockSelect.add(new Option("Selecciona una fecha primero", "", true, true));
+      blockSelect.disabled = true;
+    }
+  }
+
+  // Cuando cambia el bloque
+  blockSelect.addEventListener("change", () => {
+    const d = weekday(dateInput.value);
+    if (!SCHEDULE[d]) return;
+    setTimes(d, blockSelect.selectedIndex);
+  });
+</script>
 {% endblock %}

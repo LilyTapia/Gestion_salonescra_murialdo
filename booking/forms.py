@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as date_cls
+import calendar
 from .models import Room, Material, Reservation, Blackout, RoomInventory
 
 class ReservationForm(forms.Form):
@@ -18,37 +19,117 @@ class ReservationForm(forms.Form):
         return cleaned
 
 class BlackoutForm(forms.ModelForm):
+    date = forms.DateField(
+        label="Fecha",
+        widget=forms.DateInput(attrs={"type": "date"})
+    )
+    start_time = forms.TimeField(
+        label="Inicio",
+        widget=forms.TimeInput(attrs={"type": "time", "readonly": "readonly"})
+    )
+    end_time = forms.TimeField(
+        label="Termino",
+        widget=forms.TimeInput(attrs={"type": "time", "readonly": "readonly"})
+    )
+    repeat = forms.ChoiceField(
+        label="Repeticion",
+        choices=[
+            ("none", "Sin repeticion"),
+            ("weekly", "Semanal"),
+            ("monthly", "Mensual"),
+        ],
+        initial="none"
+    )
+    repeat_until = forms.DateField(
+        label="Repetir hasta",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        help_text="Requerido si seleccionas un bloqueo semanal o mensual."
+    )
+
     class Meta:
         model = Blackout
-        fields = ["room", "start_datetime", "reason"]
-        widgets = {
-            "start_datetime": forms.DateTimeInput(attrs={"type":"datetime-local"}),
-        }
+        fields = ["room", "reason"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['start_datetime'].help_text = "El bloqueo será automáticamente de 45 minutos"
+        self._occurrences = []
 
-    def clean_start_datetime(self):
-        start_datetime = self.cleaned_data.get('start_datetime')
-        if start_datetime:
-            # Calculate end datetime (45 minutes later)
-            end_datetime = start_datetime + timedelta(minutes=45)
-            
-            # Store the calculated end datetime for later use
-            self.calculated_end_datetime = end_datetime
-        
-        return start_datetime
+        if self.instance and self.instance.pk:
+            start_dt = self.instance.start_datetime
+            end_dt = self.instance.end_datetime
+            self.fields["date"].initial = start_dt.date()
+            self.fields["start_time"].initial = start_dt.time()
+            self.fields["end_time"].initial = end_dt.time()
+            # Repeat options only for existing records
+            self.fields["repeat"].initial = "none"
+            self.fields["repeat"].widget = forms.HiddenInput()
+            self.fields["repeat_until"].widget = forms.HiddenInput()
+        else:
+            # Pre-fill with today when creating a new blackout
+            self.fields["date"].initial = datetime.today().date()
 
     def clean(self):
         cleaned = super().clean()
-        start_datetime = cleaned.get("start_datetime")
-        
-        if start_datetime:
-            # Add the calculated end datetime to cleaned data
-            cleaned['end_datetime'] = getattr(self, 'calculated_end_datetime', None)
-        
+        date_value = cleaned.get("date")
+        start_time = cleaned.get("start_time")
+        end_time = cleaned.get("end_time")
+        repeat = cleaned.get("repeat") or "none"
+        repeat_until = cleaned.get("repeat_until")
+
+        if date_value and start_time and end_time:
+            start_dt = datetime.combine(date_value, start_time)
+            end_dt = datetime.combine(date_value, end_time)
+
+            if start_dt >= end_dt:
+                self.add_error("end_time", "La hora de termino debe ser mayor que la hora de inicio.")
+            else:
+                occurrences = [(start_dt, end_dt)]
+
+                if repeat in {"weekly", "monthly"}:
+                    if not repeat_until:
+                        self.add_error("repeat_until", "Debes indicar una fecha limite para la repeticion.")
+                    elif repeat_until < date_value:
+                        self.add_error("repeat_until", "La fecha limite debe ser posterior a la fecha inicial.")
+                    else:
+                        current_date = date_value
+                        while True:
+                            if repeat == "weekly":
+                                current_date += timedelta(weeks=1)
+                            else:
+                                current_date = self._add_one_month(current_date)
+
+                            if current_date is None or current_date > repeat_until:
+                                break
+
+                            occurrences.append(
+                                (
+                                    datetime.combine(current_date, start_time),
+                                    datetime.combine(current_date, end_time)
+                                )
+                            )
+
+                self._occurrences = occurrences
+                cleaned["start_datetime"] = occurrences[0][0]
+                cleaned["end_datetime"] = occurrences[0][1]
         return cleaned
+
+    def _add_one_month(self, base_date: date_cls):
+        """Return the same day next month, adjusting to the last valid day if needed."""
+        year = base_date.year
+        month = base_date.month + 1
+        if month > 12:
+            month = 1
+            year += 1
+        last_day = calendar.monthrange(year, month)[1]
+        day = min(base_date.day, last_day)
+        try:
+            return date_cls(year, month, day)
+        except ValueError:
+            return None
+
+    def get_occurrences(self):
+        return list(self._occurrences or [])
 
 class MaterialForm(forms.ModelForm):
     class Meta:

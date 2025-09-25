@@ -1,73 +1,77 @@
 <!doctype html>
 <html lang="es">
-
+{% load static tz %}
+{% now "U" as CACHE_BUST %}
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Salones CRA</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20250830092750">
+
+  <!-- Favicon y CSS con cache-busting -->
+  <link rel="icon" href="{% static 'img/Logo_colegio.png' %}?v={{ CACHE_BUST }}">
+  <link rel="stylesheet" href="{% static 'styles.css' %}?v={{ CACHE_BUST }}">
+
+  <!-- Cabeceras para no cachear en dev -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 </head>
 
-<body>
-  <header>
-    <h1>Gestión de Salones CRA</h1>
-    <nav>
+<body class="{% if user.is_staff %}is-admin{% endif %}">
+  <!-- HEADER -->
+  <header class="site-header">
+  <div class="header-bar">
+    <!-- IZQUIERDA: logo + nombre -->
+    <div class="logo-block">
+      <a class="logo" href="/">
+        <img src="{% static 'img/Logo_colegio.png' %}" alt="Logo del colegio">
+      </a>
+      <span class="school-name">Colegio Murialdo Valpo</span>
+    </div>
+
+    <!-- CENTRO: título grande -->
+    <div class="title-center">
+      <h1 class="brand">Gestión de Salones CRA</h1>
+    </div>
+
+    <!-- DERECHA: NAV en la misma línea -->
+    <nav class="header-actions">
       {% if user.is_authenticated %}
-      <a href="/reservas/" {% if '/reservas/' in request.path %}class="active"{% endif %}>Reservas</a>
-      {% endif %}
-      {% if user.is_authenticated and user.is_staff %}
-      <a href="/bloqueos/" {% if '/bloqueos/' in request.path %}class="active"{% endif %}>Bloqueos</a>
-      <a href="/materiales/" {% if '/materiales/' in request.path %}class="active"{% endif %}>Materiales</a>
-      <a href="/inventario/" {% if '/inventario/' in request.path %}class="active"{% endif %}>Inventario</a>
-      <a href="/usuarios/" {% if '/usuarios/' in request.path %}class="active"{% endif %}>Usuarios</a>
-      <a href="/reportes/" {% if '/reportes/' in request.path %}class="active"{% endif %}>Reportes</a>
-      {% endif %}
-      {% if user.is_authenticated %}
-      <a href="/cuentas/logout/">Cerrar sesión ({{ user.username }})</a>
+        <a href="/reservas/" {% if '/reservas/' in request.path %}class="active"{% endif %}>Reservas</a>
+
+        {% if user.is_staff %}
+          <a href="/bloqueos/" {% if '/bloqueos/' in request.path %}class="active"{% endif %}>Bloqueos</a>
+          <a href="/materiales/" {% if '/materiales/' in request.path %}class="active"{% endif %}>Materiales</a>
+          <a href="/inventario/" {% if '/inventario/' in request.path %}class="active"{% endif %}>Inventario</a>
+          <a href="/usuarios/" {% if '/usuarios/' in request.path %}class="active"{% endif %}>Usuarios</a>
+          <a href="/reportes/" {% if '/reportes/' in request.path %}class="active"{% endif %}>Reportes</a>
+        {% endif %}
+
+        <a href="/cuentas/logout/">Cerrar sesión ({{ user.username }})</a>
       {% else %}
-      <a href="/cuentas/login/" {% if '/cuentas/login/' in request.path %}class="active"{% endif %}>Iniciar sesión</a>
-      <a href="/cuentas/registro/" {% if '/cuentas/registro/' in request.path %}class="active"{% endif %}>Registrarse</a>
+        <a href="/cuentas/login/" {% if '/cuentas/login/' in request.path %}class="active"{% endif %}>Iniciar sesión</a>
+        <a href="/cuentas/registro/" {% if '/cuentas/registro/' in request.path %}class="active"{% endif %}>Registrarse</a>
       {% endif %}
     </nav>
-  </header>
+  </div>
+</header>
+  <!-- CONTENIDO -->
   <main>
     {% if messages %}
-    <ul class="flash">
-      {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
+      <ul class="flash">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+
   <script>
-    // Force page refresh to prevent cache issues with authentication state
-    if (performance.navigation.type === performance.navigation.TYPE_BACK_FORWARD) {
+    // Si el navegador vuelve con el back/forward cache, fuerza recarga
+    if (performance?.navigation?.type === performance.navigation.TYPE_BACK_FORWARD) {
       location.reload();
     }
-
-    function clearCache() {
-      // Clear browser cache and force reload
-      if ('caches' in window) {
-        caches.keys().then(function (names) {
-          names.forEach(function (name) {
-            caches.delete(name);
-          });
-        });
-      }
-      // Force reload after logout
-      setTimeout(function () {
-        window.location.href = window.location.href + '?t=' + new Date().getTime();
-      }, 100);
-    }
-
-    // Debug authentication state
-    console.log('User authenticated:', '{{ user.is_authenticated|yesno:"true,false" }}');
-    console.log('User is staff:', '{{ user.is_staff|yesno:"true,false" }}');
   </script>
 </body>
-
 </html>

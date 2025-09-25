@@ -39,19 +39,19 @@
     
     <!-- Export buttons -->
     <div class="export-section">
-      <h3>Exportar reporte</h3>
-      <div class="export-buttons">
-        <a href="{% url 'export_reports_pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}{% if room_filter %}&room={{ room_filter }}{% endif %}" 
-           class="btn btn-secondary export-btn">
-          📄 Exportar PDF
-        </a>
-        <a href="{% url 'export_reports_excel' %}?start_date={{ start_date }}&end_date={{ end_date }}{% if room_filter %}&room={{ room_filter }}{% endif %}" 
-           class="btn btn-success export-btn">
-          📊 Exportar Excel
-        </a>
-      </div>
-    </div>
+  <h3>Exportar reporte</h3>
+  <div class="export-buttons">
+    <a href="{% url 'export_reports_pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}{% if room_filter %}&room={{ room_filter }}{% endif %}" 
+       class="btn btn-danger export-btn">
+      📄 Exportar PDF
+    </a>
+    <a href="{% url 'export_reports_excel' %}?start_date={{ start_date }}&end_date={{ end_date }}{% if room_filter %}&room={{ room_filter }}{% endif %}" 
+       class="btn btn-success export-btn">
+      📊 Exportar Excel
+    </a>
   </div>
+</div>
+
 
   <!-- Summary Stats -->
   <div class="stats-grid">

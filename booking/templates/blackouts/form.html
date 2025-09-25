@@ -2,50 +2,119 @@
 {% block content %}
 <div class="form-container">
   <h2>{{ title }}</h2>
-  
-  <form method="post" class="admin-form">
+
+  <form method="post" class="block-form">
     {% csrf_token %}
-    
-    <div class="form-group">
-      <label for="{{ form.room.id_for_label }}">{{ form.room.label }}</label>
-      {{ form.room }}
-      {% if form.room.errors %}
-        <div class="error-messages">
-          {% for error in form.room.errors %}
-            <p class="error">{{ error }}</p>
-          {% endfor %}
+
+    <div class="form-section">
+      <h3>Informacion del bloqueo</h3>
+
+      <div class="form-group">
+        <label for="{{ form.room.id_for_label }}">Salon</label>
+        {{ form.room }}
+        {% if form.room.errors %}
+          <div class="error-messages">
+            {% for error in form.room.errors %}
+              <p class="error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <small class="help-text">Deja vacio para bloqueo global</small>
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.date.id_for_label }}">Fecha</label>
+        {{ form.date }}
+        {% if form.date.errors %}
+          <div class="error-messages">
+            {% for error in form.date.errors %}
+              <p class="error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <small class="help-text">Elige la fecha para cargar los bloques disponibles de ese dia.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="block-select"><strong>Bloque</strong></label>
+        <select id="block-select" class="filter-select" required></select>
+        <small id="block-help" class="help-text"></small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="{{ form.start_time.id_for_label }}">Inicio</label>
+          {{ form.start_time }}
+          {% if form.start_time.errors %}
+            <div class="error-messages">
+              {% for error in form.start_time.errors %}
+                <p class="error">{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
-      {% endif %}
-      <small class="help-text">Deja vacío para bloqueo global</small>
-    </div>
-    
-    <div class="form-group">
-      <label for="{{ form.start_datetime.id_for_label }}">{{ form.start_datetime.label }}</label>
-      {{ form.start_datetime }}
-      {% if form.start_datetime.help_text %}
-        <small class="help-text">{{ form.start_datetime.help_text }}</small>
-      {% endif %}
-      {% if form.start_datetime.errors %}
-        <div class="error-messages">
-          {% for error in form.start_datetime.errors %}
-            <p class="error">{{ error }}</p>
-          {% endfor %}
+
+        <div class="form-group">
+          <label for="{{ form.end_time.id_for_label }}">Termino</label>
+          {{ form.end_time }}
+          {% if form.end_time.errors %}
+            <div class="error-messages">
+              {% for error in form.end_time.errors %}
+                <p class="error">{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
-      {% endif %}
+      </div>
     </div>
-    
-    <div class="form-group">
-      <label for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
-      {{ form.reason }}
-      {% if form.reason.errors %}
-        <div class="error-messages">
-          {% for error in form.reason.errors %}
-            <p class="error">{{ error }}</p>
-          {% endfor %}
-        </div>
-      {% endif %}
+
+    {% if not form.repeat.is_hidden %}
+    <div class="form-section">
+      <h3>Repeticion</h3>
+      <div class="form-group">
+        <label for="{{ form.repeat.id_for_label }}">Frecuencia</label>
+        {{ form.repeat }}
+        {% if form.repeat.errors %}
+          <div class="error-messages">
+            {% for error in form.repeat.errors %}
+              <p class="error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      <div class="form-group" id="repeat-until-wrapper">
+        <label for="{{ form.repeat_until.id_for_label }}">Repetir hasta</label>
+        {{ form.repeat_until }}
+        <small class="help-text">{{ form.repeat_until.help_text }}</small>
+        {% if form.repeat_until.errors %}
+          <div class="error-messages">
+            {% for error in form.repeat_until.errors %}
+              <p class="error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
     </div>
-    
+    {% else %}
+      {{ form.repeat }}
+      {{ form.repeat_until }}
+    {% endif %}
+
+    <div class="form-section">
+      <h3>Detalle</h3>
+      <div class="form-group">
+        <label for="{{ form.reason.id_for_label }}">Razon</label>
+        {{ form.reason }}
+        {% if form.reason.errors %}
+          <div class="error-messages">
+            {% for error in form.reason.errors %}
+              <p class="error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
     {% if form.non_field_errors %}
       <div class="error-messages">
         {% for error in form.non_field_errors %}
@@ -53,7 +122,7 @@
         {% endfor %}
       </div>
     {% endif %}
-    
+
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Guardar</button>
       <a href="{% url 'blackout_list' %}" class="btn btn-secondary">Cancelar</a>
@@ -63,36 +132,63 @@
 
 <style>
 .form-container {
-  max-width: 500px;
+  max-width: 720px;
   margin: 2rem auto;
-  padding: 2rem;
+  padding: 2.5rem;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 .form-container h2 {
-  text-align: center;
-  margin-bottom: 2rem;
+  text-align: left;
+  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
   color: #2c3e50;
 }
 
-.admin-form {
+.block-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
+}
+
+.form-section {
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f9fbfd;
+}
+
+.form-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  color: #1d3b58;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 .form-group label {
-  font-weight: bold;
-  color: #495057;
+  font-weight: 600;
+  color: #34495e;
 }
 
 .form-group select,
@@ -100,20 +196,25 @@
 .form-group textarea {
   padding: 0.75rem;
   border: 1px solid #ced4da;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 1rem;
+  background: #fff;
+}
+
+.filter-select {
+  width: 100%;
 }
 
 .form-group select:focus,
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 .help-text {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: #6c757d;
 }
 
@@ -123,45 +224,159 @@
 
 .error {
   color: #dc3545;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   margin: 0.1rem 0;
 }
 
 .form-actions {
   display: flex;
   gap: 1rem;
-  justify-content: center;
-  margin-top: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
 }
 
 .btn {
   padding: 0.75rem 2rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 1rem;
-  text-decoration: none;
-  text-align: center;
   cursor: pointer;
-  transition: background-color 0.2s;
-  font-weight: 500;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .btn-primary {
-  background-color: #007bff;
-  color: white;
+  background-color: #2563eb;
+  color: #fff;
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+  background-color: #1d4ed8;
 }
 
 .btn-secondary {
   background-color: #6c757d;
-  color: white;
+  color: #fff;
 }
 
 .btn-secondary:hover {
   background-color: #545b62;
 }
+
+@media (max-width: 640px) {
+  .form-container {
+    padding: 1.5rem;
+  }
+  .form-row {
+    flex-direction: column;
+  }
+}
 </style>
+
+<script>
+  const BLOQUES_BASE = [
+    ["08:00","08:45"],
+    ["08:45","09:30"],
+    ["09:50","10:35"],
+    ["10:35","11:20"],
+    ["11:35","12:20"],
+    ["12:20","13:05"],
+    ["13:05","13:50"],
+    ["13:50","14:35"],
+    ["14:35","15:20"],
+    ["15:20","16:05"],
+    ["16:05","16:50"],
+  ];
+
+  const SCHEDULE = {
+    1: BLOQUES_BASE,
+    2: BLOQUES_BASE,
+    3: BLOQUES_BASE,
+    4: [...BLOQUES_BASE, ["17:00","18:00"]],
+    5: BLOQUES_BASE.slice(0, 6),
+  };
+
+  function parseISO(str){ const [y,m,d]=str.split("-").map(Number); return new Date(y, m-1, d); }
+  function weekday(str){ return str ? parseISO(str).getDay() : null; }
+
+  const dateInput   = document.getElementById("id_date");
+  const startInput  = document.getElementById("id_start_time");
+  const endInput    = document.getElementById("id_end_time");
+  const blockSelect = document.getElementById("block-select");
+  const blockHelp   = document.getElementById("block-help");
+  const repeatField = document.getElementById("id_repeat");
+  const repeatUntil = document.getElementById("id_repeat_until");
+  const repeatWrapper = document.getElementById("repeat-until-wrapper");
+
+  [startInput, endInput].forEach(i => { if (i) i.readOnly = true; });
+
+  function setTimes(dayIdx, idx){
+    const [ini, fin] = SCHEDULE[dayIdx][idx];
+    startInput.value = ini;
+    endInput.value   = fin;
+    blockHelp.textContent = `Horario del bloque ${idx+1}: ${ini} - ${fin}`;
+  }
+
+  function syncBlockFromTimes(dayIdx){
+    if (!startInput || !endInput || !startInput.value || !endInput.value || !SCHEDULE[dayIdx]){
+      return false;
+    }
+    const idx = SCHEDULE[dayIdx].findIndex(([ini, fin]) => ini === startInput.value && fin === endInput.value);
+    if (idx >= 0){
+      blockSelect.selectedIndex = idx;
+      setTimes(dayIdx, idx);
+      return true;
+    }
+    return false;
+  }
+
+  function loadBlocksFor(dayIdx){
+    blockSelect.innerHTML = "";
+    if (!SCHEDULE[dayIdx]){
+      blockSelect.add(new Option("Selecciona un dia habil", "", true, true));
+      blockSelect.disabled = true;
+      if (startInput) startInput.value = "";
+      if (endInput) endInput.value = "";
+      blockHelp.textContent = "Solo hay bloques entre lunes y viernes.";
+      return;
+    }
+    blockSelect.disabled = false;
+    SCHEDULE[dayIdx].forEach((range, i) => {
+      const [ini, fin] = range;
+      blockSelect.add(new Option(`Bloque ${i+1} (${ini} - ${fin})`, String(i+1)));
+    });
+    if (!syncBlockFromTimes(dayIdx)){
+      blockSelect.selectedIndex = 0;
+      setTimes(dayIdx, 0);
+    }
+  }
+
+  if (dateInput){
+    dateInput.addEventListener("change", () => {
+      const d = weekday(dateInput.value);
+      loadBlocksFor(d);
+    });
+    if (dateInput.value){
+      loadBlocksFor(weekday(dateInput.value));
+    }else{
+      blockSelect.add(new Option("Selecciona una fecha primero", "", true, true));
+      blockSelect.disabled = true;
+    }
+  }
+
+  blockSelect.addEventListener("change", () => {
+    const d = weekday(dateInput.value);
+    if (!SCHEDULE[d]) return;
+    setTimes(d, blockSelect.selectedIndex);
+  });
+
+  if (repeatField && repeatWrapper){
+    function toggleRepeatUntil(){
+      const shouldShow = repeatField.value && repeatField.value !== "none";
+      repeatWrapper.style.display = shouldShow ? "flex" : "none";
+      if (!shouldShow && repeatUntil){ repeatUntil.value = ""; }
+    }
+    toggleRepeatUntil();
+    repeatField.addEventListener("change", toggleRepeatUntil);
+  }
+</script>
 {% endblock %}

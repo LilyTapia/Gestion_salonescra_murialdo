@@ -130,68 +130,88 @@ def blackout_list(request):
     ).order_by('-start_datetime')
     return render(request, 'blackouts/list.html', {'items': items})
 
+
+def _cancel_overlapping_reservations(room, start_dt, end_dt):
+    """Cancel reservations that conflict with a blackout and restore inventory."""
+    if room:
+        overlapping = Reservation.objects.filter(
+            room=room,
+            date=start_dt.date(),
+            start_time__lt=end_dt.time(),
+            end_time__gt=start_dt.time()
+        )
+    else:
+        overlapping = Reservation.objects.filter(
+            date=start_dt.date(),
+            start_time__lt=end_dt.time(),
+            end_time__gt=start_dt.time()
+        )
+
+    cancelled_count = 0
+    for reservation in overlapping:
+        for item in reservation.items.all():
+            inventory = RoomInventory.objects.get(
+                room=reservation.room,
+                material=item.material
+            )
+            inventory.quantity += item.quantity
+            inventory.save()
+
+        Blackout.objects.filter(
+            room=reservation.room,
+            reason=f"Reserva de {reservation.user.username}",
+            start_datetime=datetime.combine(reservation.date, reservation.start_time),
+            end_datetime=datetime.combine(reservation.date, reservation.end_time)
+        ).delete()
+
+        reservation.delete()
+        cancelled_count += 1
+
+    return cancelled_count
+
+
 @user_passes_test(is_library_admin)
 def blackout_create(request):
     if request.method == "POST":
         form = BlackoutForm(request.POST)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.created_by = request.user
-            
-            # Cancel overlapping reservations before saving the blackout
-            from datetime import datetime as _dt
-            start_dt = obj.start_datetime
-            end_dt = obj.end_datetime
-            
-            # Find overlapping reservations
-            if obj.room:
-                # Room-specific blackout
-                overlapping_reservations = Reservation.objects.filter(
-                    room=obj.room,
-                    date=start_dt.date(),
-                    start_time__lt=end_dt.time(),
-                    end_time__gt=start_dt.time()
+            occurrences = form.get_occurrences()
+            if not occurrences:
+                messages.error(request, "No se pudo determinar el horario del bloqueo.")
+                return render(request, 'blackouts/form.html', {'form': form, 'title': 'Nuevo bloqueo'})
+
+            room = form.cleaned_data.get('room')
+            reason = form.cleaned_data.get('reason', '')
+
+            total_cancelled = 0
+            created_count = 0
+            for start_dt, end_dt in occurrences:
+                total_cancelled += _cancel_overlapping_reservations(room, start_dt, end_dt)
+
+                obj = Blackout(
+                    room=room,
+                    reason=reason,
+                    start_datetime=start_dt,
+                    end_datetime=end_dt,
+                    created_by=request.user
                 )
+                obj.save()
+                created_count += 1
+
+            if created_count > 1:
+                base_msg = f"Se crearon {created_count} bloqueos."
             else:
-                # Global blackout affects all rooms
-                overlapping_reservations = Reservation.objects.filter(
-                    date=start_dt.date(),
-                    start_time__lt=end_dt.time(),
-                    end_time__gt=start_dt.time()
-                )
-            
-            cancelled_count = 0
-            for reservation in overlapping_reservations:
-                # Restore inventory for cancelled reservation
-                for item in reservation.items.all():
-                    inventory = RoomInventory.objects.get(
-                        room=reservation.room, 
-                        material=item.material
-                    )
-                    inventory.quantity += item.quantity
-                    inventory.save()
-                
-                # Delete the reservation-generated blackout
-                Blackout.objects.filter(
-                    room=reservation.room,
-                    reason=f"Reserva de {reservation.user.username}",
-                    start_datetime=_dt.combine(reservation.date, reservation.start_time),
-                    end_datetime=_dt.combine(reservation.date, reservation.end_time)
-                ).delete()
-                
-                reservation.delete()
-                cancelled_count += 1
-            
-            obj.save()
-            
-            if cancelled_count > 0:
-                messages.success(request, f"Bloqueo creado. Se cancelaron {cancelled_count} reserva(s) que se solapaban.")
-            else:
-                messages.success(request, "Bloqueo creado.")
+                base_msg = "Bloqueo creado."
+
+            if total_cancelled > 0:
+                base_msg += f" Se cancelaron {total_cancelled} reserva(s) que se solapaban."
+
+            messages.success(request, base_msg)
             return redirect('blackout_list')
     else:
         form = BlackoutForm()
     return render(request, 'blackouts/form.html', {'form': form, 'title': 'Nuevo bloqueo'})
+
 
 @user_passes_test(is_library_admin)
 def blackout_update(request, pk):
@@ -199,54 +219,21 @@ def blackout_update(request, pk):
     if request.method == "POST":
         form = BlackoutForm(request.POST, instance=obj)
         if form.is_valid():
+            occurrences = form.get_occurrences()
+            if not occurrences:
+                messages.error(request, "No se pudo determinar el horario del bloqueo.")
+                return render(request, 'blackouts/form.html', {'form': form, 'title': 'Editar bloqueo'})
+
+            start_dt, end_dt = occurrences[0]
+
             updated_obj = form.save(commit=False)
-            
-            # Cancel overlapping reservations with the updated blackout
-            from datetime import datetime as _dt
-            start_dt = updated_obj.start_datetime
-            end_dt = updated_obj.end_datetime
-            
-            # Find overlapping reservations
-            if updated_obj.room:
-                # Room-specific blackout
-                overlapping_reservations = Reservation.objects.filter(
-                    room=updated_obj.room,
-                    date=start_dt.date(),
-                    start_time__lt=end_dt.time(),
-                    end_time__gt=start_dt.time()
-                )
-            else:
-                # Global blackout affects all rooms
-                overlapping_reservations = Reservation.objects.filter(
-                    date=start_dt.date(),
-                    start_time__lt=end_dt.time(),
-                    end_time__gt=start_dt.time()
-                )
-            
-            cancelled_count = 0
-            for reservation in overlapping_reservations:
-                # Restore inventory for cancelled reservation
-                for item in reservation.items.all():
-                    inventory = RoomInventory.objects.get(
-                        room=reservation.room, 
-                        material=item.material
-                    )
-                    inventory.quantity += item.quantity
-                    inventory.save()
-                
-                # Delete the reservation-generated blackout
-                Blackout.objects.filter(
-                    room=reservation.room,
-                    reason=f"Reserva de {reservation.user.username}",
-                    start_datetime=_dt.combine(reservation.date, reservation.start_time),
-                    end_datetime=_dt.combine(reservation.date, reservation.end_time)
-                ).delete()
-                
-                reservation.delete()
-                cancelled_count += 1
-            
+            updated_obj.start_datetime = start_dt
+            updated_obj.end_datetime = end_dt
+
+            cancelled_count = _cancel_overlapping_reservations(updated_obj.room, start_dt, end_dt)
+
             updated_obj.save()
-            
+
             if cancelled_count > 0:
                 messages.success(request, f"Bloqueo actualizado. Se cancelaron {cancelled_count} reserva(s) que se solapaban.")
             else:
