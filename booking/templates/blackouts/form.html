@@ -7,10 +7,10 @@
     {% csrf_token %}
 
     <div class="form-section">
-      <h3>Informacion del bloqueo</h3>
+      <h3>Información del bloqueo</h3>
 
       <div class="form-group">
-        <label for="{{ form.room.id_for_label }}">Salon</label>
+        <label for="{{ form.room.id_for_label }}">Salón</label>
         {{ form.room }}
         {% if form.room.errors %}
           <div class="error-messages">
@@ -19,7 +19,7 @@
             {% endfor %}
           </div>
         {% endif %}
-        <small class="help-text">Deja vacio para bloqueo global</small>
+        <small class="help-text">Deja vacío para bloqueo global</small>
       </div>
 
       <div class="form-group">
@@ -32,7 +32,7 @@
             {% endfor %}
           </div>
         {% endif %}
-        <small class="help-text">Elige la fecha para cargar los horarios disponibles del dia para bloquear.</small>
+        <small class="help-text">Elige la fecha para cargar los horarios disponibles del día para bloquear.</small>
       </div>
 
       <div class="form-group">
@@ -55,7 +55,7 @@
         </div>
 
         <div class="form-group">
-          <label for="{{ form.end_time.id_for_label }}">Termino</label>
+          <label for="{{ form.end_time.id_for_label }}">Término</label>
           {{ form.end_time }}
           {% if form.end_time.errors %}
             <div class="error-messages">
@@ -70,7 +70,7 @@
 
     {% if not form.repeat.is_hidden %}
     <div class="form-section">
-      <h3>Repeticion</h3>
+      <h3>Repetición</h3>
       <div class="form-group">
         <label for="{{ form.repeat.id_for_label }}">Frecuencia</label>
         {{ form.repeat }}
@@ -103,7 +103,7 @@
     <div class="form-section">
       <h3>Detalle</h3>
       <div class="form-group">
-        <label for="{{ form.reason.id_for_label }}">Razon</label>
+        <label for="{{ form.reason.id_for_label }}">Razón</label>
         {{ form.reason }}
         {% if form.reason.errors %}
           <div class="error-messages">
@@ -324,7 +324,7 @@
       const lastEnd = daySchedule[daySchedule.length - 1][1];
       startInput.value = firstStart;
       endInput.value = lastEnd;
-      blockHelp.textContent = `Bloqueo completo del dia: ${firstStart} - ${lastEnd}`;
+      blockHelp.textContent = `Bloqueo completo del día: ${firstStart} - ${lastEnd}`;
       return;
     }
 
@@ -344,7 +344,7 @@
     const lastEnd = daySchedule[daySchedule.length - 1][1];
     if (startInput.value === firstStart && endInput.value === lastEnd){
       blockSelect.value = ALL_DAY_VALUE;
-      blockHelp.textContent = `Bloqueo completo del dia: ${firstStart} - ${lastEnd}`;
+      blockHelp.textContent = `Bloqueo completo del día: ${firstStart} - ${lastEnd}`;
       return true;
     }
     const idx = daySchedule.findIndex(([ini, fin]) => ini === startInput.value && fin === endInput.value);
@@ -356,30 +356,54 @@
     return false;
   }
 
-  function loadBlocksFor(dayIdx){
-    blockSelect.innerHTML = '';
-    const daySchedule = scheduleFor(dayIdx);
-    if (!daySchedule){
-      blockSelect.add(new Option('Selecciona un dia habil', '', true, true));
-      blockSelect.disabled = true;
-      if (startInput) startInput.value = '';
-      if (endInput) endInput.value = '';
-      blockHelp.textContent = 'Solo hay bloques entre lunes y viernes.';
-      return;
-    }
-    blockSelect.disabled = false;
-    blockSelect.add(new Option('Bloquear todo el dia', ALL_DAY_VALUE));
-    daySchedule.forEach((range, i) => {
-      blockSelect.add(new Option(`Bloque ${i + 1}`, String(i)));
-    });
-
-    if (!syncBlockFromTimes(dayIdx)){
-      blockSelect.value = ALL_DAY_VALUE;
-      setTimes(dayIdx, ALL_DAY_VALUE);
-    }
-  }
-
-
+  function loadBlocksFor(dayIdx){
+
+    blockSelect.innerHTML = '';
+
+    const daySchedule = scheduleFor(dayIdx);
+
+    if (!daySchedule){
+
+      blockSelect.add(new Option('Selecciona un día hábil', '', true, true));
+
+      blockSelect.disabled = true;
+
+      if (startInput) startInput.value = '';
+
+      if (endInput) endInput.value = '';
+
+      blockHelp.textContent = 'Solo hay bloques entre lunes y viernes.';
+
+      return;
+
+    }
+
+    blockSelect.disabled = false;
+
+    blockSelect.add(new Option('Bloquear todo el día', ALL_DAY_VALUE));
+
+    daySchedule.forEach((range, i) => {
+
+      blockSelect.add(new Option(`Bloque ${i + 1}`, String(i)));
+
+    });
+
+
+
+    if (!syncBlockFromTimes(dayIdx)){
+
+      blockSelect.value = ALL_DAY_VALUE;
+
+      setTimes(dayIdx, ALL_DAY_VALUE);
+
+    }
+
+  }
+
+
+
+
+
   if (dateInput){
     dateInput.addEventListener('change', () => {
       const d = weekday(dateInput.value);
