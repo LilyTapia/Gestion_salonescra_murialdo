@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+{% load static tz %}
+{% now "U" as CACHE_BUST %}
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Salones CRA</title>
+
+  <!-- Favicon y CSS con cache-busting -->
+  <link rel="icon" href="{% static 'img/Logo_colegio.png' %}?v={{ CACHE_BUST }}">
+  <link rel="stylesheet" href="{% static 'styles.css' %}?v={{ CACHE_BUST }}">
+
+  <!-- Cabeceras para no cachear en dev -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+</head>
+
+<body class="{% if user.is_staff %}is-admin{% endif %}">
+  <!-- HEADER -->
+  <header class="site-header">
+  <div class="header-bar">
+    <!-- IZQUIERDA: logo + nombre -->
+    <div class="logo-block">
+      <a class="logo" href="/">
+        <img src="{% static 'img/Logo_colegio.png' %}" alt="Logo del colegio">
+      </a>
+      <span class="school-name">Colegio Murialdo Valpo</span>
+    </div>
+
+    <!-- CENTRO: título grande -->
+    <div class="title-center">
+      <h1 class="brand">Gestión de Salones CRA</h1>
+    </div>
+
+    <!-- DERECHA: NAV en la misma línea -->
+    <nav class="header-actions">
+      {% if user.is_authenticated %}
+        <a href="/reservas/" {% if '/reservas/' in request.path %}class="active"{% endif %}>Reservas</a>
+
+        {% if user.is_staff %}
+          <a href="/bloqueos/" {% if '/bloqueos/' in request.path %}class="active"{% endif %}>Bloqueos</a>
+          <a href="/materiales/" {% if '/materiales/' in request.path %}class="active"{% endif %}>Materiales</a>
+          <a href="/inventario/" {% if '/inventario/' in request.path %}class="active"{% endif %}>Inventario</a>
+          <a href="/usuarios/" {% if '/usuarios/' in request.path %}class="active"{% endif %}>Usuarios</a>
+          <a href="/reportes/" {% if '/reportes/' in request.path %}class="active"{% endif %}>Reportes</a>
+        {% endif %}
+
+        <a href="/cuentas/logout/">Cerrar sesión ({{ user.username }})</a>
+      {% else %}
+        <a href="/cuentas/login/" {% if '/cuentas/login/' in request.path %}class="active"{% endif %}>Iniciar sesión</a>
+        <a href="/cuentas/registro/" {% if '/cuentas/registro/' in request.path %}class="active"{% endif %}>Registrarse</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+  <!-- CONTENIDO -->
+  <main>
+    {% if messages %}
+      <div class="message-overlay" id="globalMessageOverlay">
+        {% for message in messages %}
+          {% if forloop.first %}
+          <div class="message-modal message-modal--{{ message.tags|default:'info' }}">
+            <button type="button" class="message-close" id="globalMessageDismiss" aria-label="Cerrar mensaje">&times;</button>
+            {% with message.tags|default:'' as level %}
+              {% if 'error' in level or 'danger' in level %}
+                <h2>Atencion</h2>
+              {% elif 'success' in level %}
+                <h2>Operacion exitosa</h2>
+              {% elif 'warning' in level %}
+                <h2>Advertencia</h2>
+              {% else %}
+                <h2>Informacion</h2>
+              {% endif %}
+            {% endwith %}
+            <div class="message-messages">
+              <ul>
+          {% endif %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+          {% if forloop.last %}
+              </ul>
+            </div>
+            <button type="button" class="btn btn-primary" id="globalMessageConfirm">Entendido</button>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          var overlay = document.getElementById('globalMessageOverlay');
+          var dismiss = document.getElementById('globalMessageDismiss');
+          var confirmBtn = document.getElementById('globalMessageConfirm');
+          function closeOverlay(){ if (overlay) overlay.style.display = 'none'; }
+          if (dismiss){ dismiss.addEventListener('click', closeOverlay); }
+          if (confirmBtn){ confirmBtn.addEventListener('click', closeOverlay); }
+        });
+      </script>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    // Si el navegador vuelve con el back/forward cache, fuerza recarga
+    if (performance?.navigation?.type === performance.navigation.TYPE_BACK_FORWARD) {
+      location.reload();
+    }
+  </script>
+</body>
+</html>

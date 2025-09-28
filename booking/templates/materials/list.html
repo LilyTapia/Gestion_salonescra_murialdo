@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de materiales{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="header-section">
+        <h2>Gestión de materiales</h2>
+        <a href="{% url 'material_create' %}" class="btn btn-primary">Nuevo material</a>
+    </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="message message-{{ message.tags }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if materials %}
+    <div class="items-grid">
+      {% for material in materials %}
+        <div class="item-card">
+          <div class="item-header">
+            <h3>{{ material.name }}</h3>
+            <span class="item-id">ID: {{ material.id }}</span>
+          </div>
+          <div class="item-actions">
+            <a href="{% url 'material_update' material.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+            <a href="{% url 'material_delete' material.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No hay materiales registrados.</p>
+      <a href="{% url 'material_create' %}" class="btn btn-primary">Crear primer material</a>
+    </div>
+  {% endif %}
+
+  <div class="navigation-section">
+    <a href="{% url 'inventory_list' %}" class="btn btn-secondary">Ver Inventario</a>
+    <a href="{% url 'index' %}" class="btn btn-outline-secondary">Volver al Inicio</a>
+  </div>
+</div>
+
+{% endblock %}

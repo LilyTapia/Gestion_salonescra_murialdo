@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Sesión cerrada{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Sesión cerrada</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        Has cerrado sesión exitosamente.
+                    </div>
+                    <p>Gracias por usar el Sistema de Gestión de Salones CRA.</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{% url 'index' %}" class="btn btn-primary" onclick="window.location.reload();">Volver al inicio</a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary">Iniciar sesión</a>
+                    </div>
+                    <script>
+                        // Force page refresh when navigating back to prevent cache issues
+                        window.addEventListener('pageshow', function(event) {
+                            if (event.persisted) {
+                                window.location.reload();
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

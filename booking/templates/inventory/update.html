@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Actualizar inventario{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="header-section">
+        <h2>Actualizar Inventario</h2>
+        <a href="{% url 'inventory_list' %}" class="btn btn-secondary">Volver a Inventario</a>
+    </div>
+
+    <div class="form-container">
+        <div class="inventory-info">
+            <h3>{{ inventory.material.name }}</h3>
+            <p><strong>Salón:</strong> {{ inventory.room.code }}</p>
+            <p><strong>Cantidad actual:</strong> 
+                <span class="quantity-badge {% if inventory.quantity > 0 %}available{% else %}empty{% endif %}">
+                    {{ inventory.quantity }} unidades
+                </span>
+            </p>
+        </div>
+
+        {% if form.errors %}
+            <div class="error-alert">
+                {{ form.errors }}
+            </div>
+        {% endif %}
+        
+        <form method="post" class="inventory-form">
+            {% csrf_token %}
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="{{ form.action.id_for_label }}">Acción:</label>
+                    {{ form.action }}
+                    <div class="help-text">
+                        <p><strong>Agregar:</strong> Suma a la cantidad actual</p>
+                        <p><strong>Quitar:</strong> Resta de la cantidad actual</p>
+                        <p><strong>Establecer:</strong> Define la cantidad exacta</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.quantity.id_for_label }}">Cantidad:</label>
+                    {{ form.quantity }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Actualizar Inventario</button>
+                <a href="{% url 'inventory_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 700px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-section h2 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.form-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.inventory-info {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-left: 4px solid #3498db;
+}
+
+.inventory-info h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+}
+
+.inventory-info p {
+    margin: 5px 0;
+    color: #555;
+}
+
+.form-section {
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.form-group select,
+.form-group input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: white;
+    box-sizing: border-box;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.help-text {
+    margin-top: 10px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #17a2b8;
+}
+
+.help-text p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.error-alert {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+</style>
+{% endblock %}

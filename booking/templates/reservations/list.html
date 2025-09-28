@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load tz %}
+{% block content %}
+
+{% if notifications %}
+<div class="notification-overlay" id="notificationOverlay">
+  <div class="notification-modal">
+    <h2>Atencion</h2>
+    <div class="notification-messages">
+      {% for note in notifications %}
+        <p>{{ note.message|linebreaksbr }}</p>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn btn-primary" id="notificationDismiss">Entendido</button>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var dismiss = document.getElementById('notificationDismiss');
+    var overlay = document.getElementById('notificationOverlay');
+    if (dismiss && overlay) {
+      dismiss.addEventListener('click', function () {
+        overlay.style.display = 'none';
+      });
+    }
+  });
+</script>
+{% endif %}
+<div class="admin-container">
+  <div class="header-section">
+    <h2>Reservas</h2>
+    <div class="reservation-header-actions">
+      <div class="view-switch">
+        <a href="{% url 'reservation_monthly' %}" class="reservation-action {% if active_view == 'calendar' %}is-active{% endif %}">Vista mensual</a>
+        <a href="{% url 'reservation_list' %}" class="reservation-action {% if active_view == 'history' %}is-active{% endif %}">Historial de reserva</a>
+      </div>
+      {% if user.is_authenticated %}
+        <a href="/reservas/nueva/" class="reservation-action reservation-action--primary">Nueva reserva</a>
+      {% endif %}
+    </div>
+  </div>
+  {% if not user.is_authenticated %}
+    <p><em>Inicia sesión para crear reservas</em></p>
+  {% endif %}
+
+  {% now "Ymd" as TODAY %}
+
+  {% if reservations %}
+    <div class="reservations-list">
+      {% for reservation in reservations %}
+        {# Estado por fecha: pasada / hoy / futura #}
+        <div class="reservation-card
+            {% if reservation.date|date:"Ymd" == TODAY %} is-today
+            {% elif reservation.date|date:"Ymd" < TODAY %} is-past
+            {% else %} is-future
+            {% endif %}">
+          <div class="reservation-header">
+            <h3>Salón {{ reservation.room.code }}</h3>
+            <span class="reservation-date">{{ reservation.date|date:"d/m/Y" }}</span>
+          </div>
+
+          <div class="reservation-details">
+            <p><strong>Horario:</strong> {{ reservation.start_time|time:"H:i" }} - {{ reservation.end_time|time:"H:i" }}</p>
+            {% if reservation.course %}
+              <p><strong>Curso:</strong> {{ reservation.course.name }}</p>
+            {% endif %}
+            {% if reservation.subject %}
+              <p><strong>Asignatura:</strong> {{ reservation.subject.name }}</p>
+            {% endif %}
+            <p><strong>Usuario:</strong>
+              {% if reservation.user %}
+                {{ reservation.user.username }}
+              {% else %}
+                Anónimo
+              {% endif %}
+            </p>
+
+            {# Nota: el chequeo correcto es por count; un queryset vacío es truthy en plantillas #}
+            {% if reservation.items.count %}
+              <div class="materials">
+                <strong>Materiales:</strong>
+                <ul>
+                  {% for item in reservation.items.all %}
+                    <li>{{ item.material.name }} ({{ item.quantity }})</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+
+            <p class="created-at">Creada: {{ reservation.created_at|date:"d/m/Y H:i" }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No hay reservas registradas.</p>
+      {% if user.is_authenticated %}
+        <a href="/reservas/nueva/" class="btn btn-primary">Crear primera reserva</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+

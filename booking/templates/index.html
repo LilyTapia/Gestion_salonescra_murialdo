@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+{% if today_blackout %}
+  <div class="banner warning">
+    <strong>Agenda bloqueada hoy ({{ today_blackout.display_scope }}):</strong>
+    {{ today_blackout.reason }} — {{ today_blackout.start_datetime }} a {{ today_blackout.end_datetime }}
+  </div>
+{% endif %}
+<h2>Salones (A, B, C) e inventario</h2>
+<p>Cada salón tiene su propio stock de materiales.</p>
+<div class="grid">
+  {% for r in rooms %}
+    <div class="card">
+      <h3>Salón {{ r.code }}</h3>
+      <ul>
+        {% for inv in inventory %}
+          {% if inv.room_id == r.id %}
+            <li>{{ inv.material.name }}: {{ inv.quantity }}</li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

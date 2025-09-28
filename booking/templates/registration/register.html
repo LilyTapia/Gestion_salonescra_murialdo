@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="auth-container">
+  <h2>Crear cuenta</h2>
+  
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    
+    <div class="form-group">
+      <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+      {{ form.username }}
+      {% if form.username.errors %}
+        <div class="error-messages">
+          {% for error in form.username.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <small class="help-text">{{ form.username.help_text }}</small>
+    </div>
+    
+    <div class="form-group">
+      <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+      {{ form.first_name }}
+      {% if form.first_name.errors %}
+        <div class="error-messages">
+          {% for error in form.first_name.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    
+    <div class="form-group">
+      <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+      {{ form.last_name }}
+      {% if form.last_name.errors %}
+        <div class="error-messages">
+          {% for error in form.last_name.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    
+    <div class="form-group">
+      <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+      {{ form.email }}
+      {% if form.email.errors %}
+        <div class="error-messages">
+          {% for error in form.email.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <small class="help-text">{{ form.email.help_text }}</small>
+    </div>
+    
+
+    <div class="form-group">
+      <label for="{{ form.roles.id_for_label }}">{{ form.roles.label }}</label>
+      {{ form.roles }}
+      {% if form.roles.errors %}
+        <div class="error-messages">
+          {% for error in form.roles.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <small class="help-text">Selecciona todos los cargos que desempenas.</small>
+    </div>
+
+    <div class="form-group" id="courses-container" hidden>
+      <label for="{{ form.courses.id_for_label }}">{{ form.courses.label }}</label>
+      {{ form.courses }}
+      {% if form.courses.errors %}
+        <div class="error-messages">
+          {% for error in form.courses.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <small class="help-text">Selecciona los cursos donde realizas clases.</small>
+    </div>
+
+    <div class="form-group" id="subjects-container" hidden>
+      <label for="{{ form.subjects.id_for_label }}">{{ form.subjects.label }}</label>
+      {{ form.subjects }}
+      {% if form.subjects.errors %}
+        <div class="error-messages">
+          {% for error in form.subjects.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <small class="help-text">Selecciona una o varias asignaturas disponibles para los cursos elegidos.</small>
+    </div>
+    <div class="form-group">
+      <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}
+      {{ form.password1 }}
+      {% if form.password1.errors %}
+        <div class="error-messages">
+          {% for error in form.password1.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <small class="help-text">{{ form.password1.help_text }}</small>
+    </div>
+    
+    <div class="form-group">
+      <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+      {{ form.password2 }}
+      {% if form.password2.errors %}
+        <div class="error-messages">
+          {% for error in form.password2.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <small class="help-text">{{ form.password2.help_text }}</small>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Crear cuenta</button>
+      <a href="/cuentas/login/" class="btn btn-secondary">AYa tienes cuenta? Inicia sesiA3n</a>
+    </div>
+  </form>
+{{ registration_metadata|json_script:"registration-metadata" }}
+  <script src="{% static 'js/registration.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const metadataElement = document.getElementById('registration-metadata');
+      if (!metadataElement || typeof window.initDynamicRegistrationForm !== 'function') {
+        return;
+      }
+      const metadata = JSON.parse(metadataElement.textContent);
+      window.initDynamicRegistrationForm({
+        rolesSelector: '#id_roles',
+        coursesSelector: '#id_courses',
+        subjectsSelector: '#id_subjects',
+        coursesContainerSelector: '#courses-container',
+        subjectsContainerSelector: '#subjects-container',
+        metadata: metadata,
+      });
+    });
+  </script>
+
+</div>
+
+<style>
+[hidden] {
+  display: none !important;
+}
+
+.auth-container {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.auth-container h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-group label {
+  font-weight: bold;
+  color: #34495e;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.help-text {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.error-messages {
+  margin-top: 0.25rem;
+}
+
+.error {
+  color: #e74c3c;
+  font-size: 0.9rem;
+  margin: 0.1rem 0;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #7f8c8d;
+}
+</style>
+{% endblock %}

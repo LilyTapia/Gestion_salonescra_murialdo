@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="delete-container">
+  <div class="delete-header">
+    <h2>Eliminar bloqueo</h2>
+    <div class="warning-icon">⚠️</div>
+  </div>
+  
+  <div class="delete-content">
+    <p class="warning-text">¿Estás seguro de que quieres eliminar este bloqueo?</p>
+    
+    <div class="item-details">
+      <h3>Detalles del bloqueo:</h3>
+      <p><strong>Ámbito:</strong> {{ obj.display_scope }}</p>
+      <p><strong>Inicio:</strong> {{ obj.start_datetime|date:"d/m/Y H:i" }}</p>
+      <p><strong>Fin:</strong> {{ obj.end_datetime|date:"d/m/Y H:i" }}</p>
+      <p><strong>Razón:</strong> {{ obj.reason|default:"Sin especificar" }}</p>
+    </div>
+    
+    <div class="warning-message">
+      <p><strong>Esta acción no se puede deshacer.</strong></p>
+    </div>
+  </div>
+  
+  <form method="post" class="delete-form">
+    {% csrf_token %}
+    <div class="form-actions">
+      <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+      <a href="/bloqueos/" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<style>
+.delete-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border: 2px solid #dc3545;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.1);
+}
+
+.delete-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.delete-header h2 {
+  margin: 0 0 1rem 0;
+  color: #dc3545;
+}
+
+.warning-icon {
+  font-size: 3rem;
+}
+
+.delete-content {
+  margin-bottom: 2rem;
+}
+
+.warning-text {
+  font-size: 1.1rem;
+  text-align: center;
+  color: #495057;
+  margin-bottom: 1.5rem;
+}
+
+.item-details {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.item-details h3 {
+  margin: 0 0 0.5rem 0;
+  color: #495057;
+  font-size: 1rem;
+}
+
+.item-details p {
+  margin: 0.25rem 0;
+  color: #6c757d;
+}
+
+.warning-message {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  padding: 1rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.warning-message p {
+  margin: 0;
+  color: #856404;
+}
+
+.delete-form {
+  margin-top: 2rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #545b62;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if notifications %}
+<div class="notification-overlay" id="notificationOverlay">
+  <div class="notification-modal">
+    <h2>Atencion</h2>
+    <div class="notification-messages">
+      {% for note in notifications %}
+        <p>{{ note.message|linebreaksbr }}</p>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn btn-primary" id="notificationDismiss">Entendido</button>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var dismiss = document.getElementById('notificationDismiss');
+    var overlay = document.getElementById('notificationOverlay');
+    if (dismiss && overlay) {
+      dismiss.addEventListener('click', function () {
+        overlay.style.display = 'none';
+      });
+    }
+  });
+</script>
+{% endif %}
+
+<div class="admin-container">
+  <div class="header-section">
+    <h2>Vista mensual</h2>
+    <div class="reservation-header-actions">
+      <div class="view-switch">
+        <a href="{% url 'reservation_monthly' %}" class="reservation-action {% if active_view == 'calendar' %}is-active{% endif %}">Vista mensual</a>
+        <a href="{% url 'reservation_list' %}" class="reservation-action {% if active_view == 'history' %}is-active{% endif %}">Historial de reserva</a>
+      </div>
+      {% if user.is_authenticated %}
+        <a href="/reservas/nueva/" class="reservation-action reservation-action--primary">Nueva reserva</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="calendar-controls">
+    <a class="btn btn-ghost" href="{% url 'reservation_monthly' %}?year={{ prev_year }}&month={{ prev_month }}">Mes anterior</a>
+    <div class="calendar-current">{{ month_label }}</div>
+    <a class="btn btn-ghost" href="{% url 'reservation_monthly' %}?year={{ next_year }}&month={{ next_month }}">Mes siguiente</a>
+  </div>
+
+  <div class="calendar-wrapper">
+    <div class="calendar-grid">
+    {% for name in weekday_names %}
+      <div class="calendar-header-cell">{{ name }}</div>
+    {% endfor %}
+
+    {% for week in weeks %}
+      {% for day in week %}
+        <div class="calendar-cell{% if not day.in_month %} is-outside{% endif %}{% if day.is_today %} is-today{% endif %}{% if day.is_weekend %} is-weekend{% endif %}{% if day.is_full_day_block %} is-full-block{% endif %}">
+          <div class="day-number">{{ day.date|date:"j" }}</div>
+          <div class="day-content">
+            {% if day.is_full_day_block %}
+              <div class="day-full-block">
+                {% for blackout in day.full_block_blackouts %}
+                  <div class="full-block-chip">
+                    <div class="chip-title">Bloqueo</div>
+                    {% if blackout.scope and blackout.scope != blackout.reason %}
+                      <div class="chip-subtitle">{{ blackout.scope }}</div>
+                    {% endif %}
+                    {% if blackout.time_label %}
+                      <div class="chip-subtitle">{{ blackout.time_label }}</div>
+                    {% endif %}
+                    {% if blackout.reason %}
+                      <div class="chip-reason">{{ blackout.reason }}</div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              {% if day.blackouts %}
+                <div class="day-blackouts">
+                  {% for blackout in day.blackouts %}
+                    <div class="blackout-chip">
+                      <div class="chip-title">Bloqueo</div>
+                      {% if blackout.scope %}
+                        <div class="chip-subtitle">{{ blackout.scope }}</div>
+                      {% endif %}
+                      {% if blackout.time_label %}
+                        <div class="chip-subtitle">{{ blackout.time_label }}</div>
+                      {% endif %}
+                      {% if blackout.reason %}
+                        <div class="chip-reason">{{ blackout.reason }}</div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% for block in day.room_blocks %}
+                <div class="calendar-entry calendar-entry--{{ block.room.code|lower }}">
+                  <div class="entry-heading">Salon {{ block.room.code }}</div>
+                  {% if block.entries %}
+                    {% for item in block.entries %}
+                      <div class="entry-line">
+                        <span class="entry-time">{{ item.time_range }}</span>
+                        <span class="entry-info">{{ item.teacher }}{% if item.course %} &middot; {{ item.course }}{% endif %}{% if item.subject %} &middot; {{ item.subject }}{% endif %}</span>
+                      </div>
+                    {% endfor %}
+                  {% else %}
+                    <div class="entry-empty">Sin reservas</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

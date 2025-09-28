@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="admin-container">
+  <div class="header-section">
+    <h2>Gestión de bloqueos</h2>
+    <a href="/bloqueos/nuevo/" class="btn btn-primary">Nuevo bloqueo</a>
+  </div>
+
+  {% if items %}
+    <div class="items-grid">
+      {% for item in items %}
+        <div class="item-card item-card--{{ item.style_variant }}">
+          <div class="item-header">
+            <h3>{{ item.display_scope }}</h3>
+            <span class="item-type item-type--{{ item.style_variant }}">{{ item.display_type }}</span>
+          </div>
+          <div class="item-details">
+            <p><strong>Inicio:</strong> {{ item.start_datetime|date:"d/m/Y H:i" }}</p>
+            <p><strong>Fin:</strong> {{ item.end_datetime|date:"d/m/Y H:i" }}</p>
+            <p><strong>Razón:</strong> {{ item.reason|default:"Sin especificar" }}</p>
+            {% if item.created_by %}
+              <p><strong>Creado por:</strong> {{ item.created_by.username }}</p>
+            {% endif %}
+          </div>
+          <div class="item-actions">
+            <a href="/bloqueos/{{ item.pk }}/editar/" class="btn btn-sm btn-secondary">Editar</a>
+            <a href="/bloqueos/{{ item.pk }}/eliminar/" class="btn btn-sm btn-danger">Eliminar</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No hay bloqueos registrados.</p>
+      <a href="/bloqueos/nuevo/" class="btn btn-primary">Crear primer bloqueo</a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

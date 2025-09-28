@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="header-section">
+        <h2>Gestión de Usuarios</h2>
+        <a href="/usuarios/nuevo/" class="btn btn-primary">Nuevo Usuario</a>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Email</th>
+                    <th>Nombre completo</th>
+                    <th>Estado</th>
+                    <th>Tipo</th>
+                    <th>Grupos</th>
+                    <th>Último Acceso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <strong>{{ user.username }}</strong>
+                        {% if user.is_superuser %}
+                            <span class="badge superuser">Superuser</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.email|default:"-" }}</td>
+                    <td>
+                        {% if user.get_full_name %}
+                            {{ user.get_full_name }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="status active">Activo</span>
+                        {% else %}
+                            <span class="status inactive">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_staff %}
+                            <span class="badge staff">Staff</span>
+                        {% else %}
+                            <span class="badge regular">Usuario</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.groups.all %}
+                            {% for group in user.groups.all %}
+                                <span class="group-badge">{{ group.name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.last_login %}
+                            {{ user.last_login|date:"d/m/Y H:i" }}
+                        {% else %}
+                            <span class="text-muted">Nunca</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="/admin/auth/user/{{ user.id }}/change/" class="btn-small btn-edit" title="Editar">✏️</a>
+                        {% if not user.is_superuser %}
+                            <a href="/admin/auth/user/{{ user.id }}/delete/" class="btn-small btn-delete" title="Eliminar">🗑️</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted">No hay usuarios registrados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="stats-section">
+        <div class="stat-card">
+            <h3>{{ users|length }}</h3>
+            <p>Total Usuarios</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ users|length|add:"-1" }}</h3>
+            <p>Usuarios Activos</p>
+        </div>
+        <div class="stat-card">
+            <h3>{% for user in users %}{% if user.is_staff %}{{ forloop.counter0|add:"1" }}{% endif %}{% endfor %}</h3>
+            <p>Administradores</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

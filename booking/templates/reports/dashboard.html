@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="header-section">
+    <h2>Reportes</h2>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <form method="GET" class="filters-form">
+      <div class="filters">
+        <div class="filter-group">
+          <label for="start_date">Fecha Inicio:</label>
+          <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="filter-input">
+        </div>
+        <div class="filter-group">
+          <label for="end_date">Fecha Fin:</label>
+          <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="filter-input">
+        </div>
+        <div class="filter-group">
+          <label for="room">Salón:</label>
+          <select id="room" name="room" class="filter-select">
+            <option value="">Todos los salones</option>
+            {% for room in rooms %}
+              <option value="{{ room.id }}" {% if room_filter == room.id|stringformat:"s" %}selected{% endif %}>
+                Salón {{ room.code }} - {{ room.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group button-group">
+          <button type="submit" class="btn btn-primary btn-generate">Generar reporte</button>
+        </div>
+      </div>
+    </form>
+    
+    <!-- Export buttons -->
+    <div class="export-section">
+  <h3>Exportar reporte</h3>
+  <div class="export-buttons">
+    <a href="{% url 'export_reports_pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}{% if room_filter %}&room={{ room_filter }}{% endif %}" 
+       class="btn btn-danger export-btn">
+      📄 Exportar PDF
+    </a>
+    <a href="{% url 'export_reports_excel' %}?start_date={{ start_date }}&end_date={{ end_date }}{% if room_filter %}&room={{ room_filter }}{% endif %}" 
+       class="btn btn-success export-btn">
+      📊 Exportar Excel
+    </a>
+  </div>
+</div>
+
+
+  <!-- Summary Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h3>{{ total_reservations }}</h3>
+      <p>Total Reservas</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{ room_stats|length }}</h3>
+      <p>Salones Utilizados</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{ material_stats|length }}</h3>
+      <p>Tipos de Materiales</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{ date_range_display }}</h3>
+      <p>Período del Reporte</p>
+    </div>
+  </div>
+
+  <!-- Reports Grid -->
+  <div class="reports-grid">
+    <!-- Reservations by Room Report -->
+    <div class="report-section">
+      <h2>Reservas por salón</h2>
+      {% if room_stats %}
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Salón</th>
+                <th>Nombre</th>
+                <th>Cantidad de reservas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for stat in room_stats %}
+                <tr>
+                  <td><strong>Salón {{ stat.room__code }}</strong></td>
+                  <td>Salón {{ stat.room__code }}</td>
+                  <td>
+                    <span class="quantity-badge {% if stat.reservation_count > 5 %}available{% else %}empty{% endif %}">
+                      {{ stat.reservation_count }} reservas
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="no-data">
+          <p>No hay reservas en el período seleccionado.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Materials Requested Report -->
+    <div class="report-section">
+      <h2>Materiales solicitados</h2>
+      {% if material_stats %}
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Material</th>
+                <th>Cantidad total solicitada</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for stat in material_stats %}
+                <tr>
+                  <td><strong>{{ stat.material__name }}</strong></td>
+                  <td>
+                    <span class="quantity-badge {% if stat.total_quantity > 10 %}available{% else %}empty{% endif %}">
+                      {{ stat.total_quantity }} unidades
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="no-data">
+          <p>No hay materiales solicitados en el período seleccionado.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

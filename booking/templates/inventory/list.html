@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="admin-container">
+  <div class="header-section">
+    <h2>Gestión de inventario</h2>
+    <a href="/inventario/nuevo/" class="btn btn-primary">Agregar inventario</a>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="filters-section">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Buscar por material o salón..." class="search-input">
+    </div>
+    <div class="filters">
+      <select id="roomFilter" class="filter-select">
+        <option value="">Todos los salones</option>
+        {% for room in rooms %}
+          <option value="{{ room.code }}">Salón {{ room.code }}</option>
+        {% endfor %}
+      </select>
+      <select id="materialFilter" class="filter-select">
+        <option value="">Todos los materiales</option>
+        {% for material in materials %}
+          <option value="{{ material.name }}">{{ material.name }}</option>
+        {% endfor %}
+      </select>
+      <select id="availabilityFilter" class="filter-select">
+        <option value="">Todas las disponibilidades</option>
+        <option value="available">Disponible</option>
+        <option value="empty">Agotado</option>
+      </select>
+    </div>
+  </div>
+
+  {% if inventory %}
+    <div class="table-container">
+      <table class="data-table" id="inventoryTable">
+        <thead>
+          <tr>
+            <th>Salón</th>
+            <th>Material</th>
+            <th>Cantidad</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in inventory %}
+            <tr data-room="{{ item.room.code }}" data-material="{{ item.material.name }}" data-availability="{% if item.quantity > 0 %}available{% else %}empty{% endif %}">
+              <td><strong>Salón {{ item.room.code }}</strong></td>
+              <td>{{ item.material.name }}</td>
+              <td>
+                <span class="quantity-badge {% if item.quantity > 0 %}available{% else %}empty{% endif %}">
+                  {{ item.quantity }} unidades
+                </span>
+              </td>
+              <td>
+                {% if item.quantity > 0 %}
+                  <span class="quantity-badge available">Disponible</span>
+                {% else %}
+                  <span class="quantity-badge empty">Agotado</span>
+                {% endif %}
+              </td>
+              <td class="actions">
+                <a href="/inventario/{{ item.pk }}/actualizar/" class="btn btn-sm btn-secondary">Actualizar</a>
+                <a href="/inventario/{{ item.pk }}/eliminar/" class="btn btn-sm btn-danger">Eliminar</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Summary Section -->
+    <div class="summary-section">
+      <h3>Resumen por salón</h3>
+      <div class="summary-grid">
+        {% for room in rooms %}
+          <div class="summary-card">
+            <div class="summary-header">
+              <h4>Salón {{ room.code }}</h4>
+            </div>
+            <div class="summary-content">
+              {% for item in inventory %}
+                {% if item.room.id == room.id %}
+                  <div class="summary-item">
+                    <span>{{ item.material.name }}</span>
+                    <span class="quantity-badge {% if item.quantity > 0 %}available{% else %}empty{% endif %}">
+                      {{ item.quantity }}
+                    </span>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No hay inventario registrado.</p>
+      <a href="/inventario/nuevo/" class="btn btn-primary">Agregar primer inventario</a>
+    </div>
+  {% endif %}
+  
+  <div class="navigation-links">
+    <a href="/materiales/" class="btn btn-secondary">Gestionar materiales</a>
+    <a href="/" class="btn btn-outline-secondary">Volver al inicio</a>
+  </div>
+</div>
+
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+  filterTable();
+});
+
+// Filter functionality
+document.getElementById('roomFilter').addEventListener('change', function() {
+  filterTable();
+});
+
+document.getElementById('materialFilter').addEventListener('change', function() {
+  filterTable();
+});
+
+document.getElementById('availabilityFilter').addEventListener('change', function() {
+  filterTable();
+});
+
+function filterTable() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const roomFilter = document.getElementById('roomFilter').value;
+  const materialFilter = document.getElementById('materialFilter').value;
+  const availabilityFilter = document.getElementById('availabilityFilter').value;
+  
+  const rows = document.querySelectorAll('#inventoryTable tbody tr');
+  
+  rows.forEach(row => {
+    const room = row.getAttribute('data-room');
+    const material = row.getAttribute('data-material');
+    const availability = row.getAttribute('data-availability');
+    const text = row.textContent.toLowerCase();
+    
+    const matchesSearch = text.includes(searchTerm);
+    const matchesRoom = !roomFilter || room === roomFilter;
+    const matchesMaterial = !materialFilter || material === materialFilter;
+    const matchesAvailability = !availabilityFilter || availability === availabilityFilter;
+    
+    if (matchesSearch && matchesRoom && matchesMaterial && matchesAvailability) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+</script>
+
+{% endblock %}
