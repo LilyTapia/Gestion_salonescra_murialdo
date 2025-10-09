@@ -93,11 +93,24 @@
                   {% endfor %}
                 </div>
               {% endif %}
-              {% for block in day.room_blocks %}
-                <div class="calendar-entry calendar-entry--{{ block.room.code|lower }}">
-                  <div class="entry-heading">Salon {{ block.room.code }}</div>
-                  {% if block.entries %}
-                    {% for item in block.entries %}
+              {% for room_block in day.room_blocks %}
+                <div class="calendar-entry calendar-entry--{{ room_block.room.code|lower }}">
+                  <div class="entry-heading">Salon {{ room_block.room.code }}</div>
+
+                  {% if room_block.reserved_blocks %}
+                    <div class="entry-section">
+                      <div class="entry-section-title">Reservas</div>
+                      {% for block_item in room_block.reserved_blocks %}
+                        <div class="entry-line entry-line--reserved">
+                          <span class="block-chip block-chip--reserved">{{ block_item.label }} ({{ block_item.time_label }})</span>
+                          {% if block_item.reservation %}
+                            <span class="entry-info">{{ block_item.reservation.teacher }}{% if block_item.reservation.course %} &middot; {{ block_item.reservation.course }}{% endif %}{% if block_item.reservation.subject %} &middot; {{ block_item.reservation.subject }}{% endif %}</span>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% elif room_block.reservations %}
+                    {% for item in room_block.reservations %}
                       <div class="entry-line">
                         <span class="entry-time">{{ item.time_range }}</span>
                         <span class="entry-info">{{ item.teacher }}{% if item.course %} &middot; {{ item.course }}{% endif %}{% if item.subject %} &middot; {{ item.subject }}{% endif %}</span>
@@ -105,6 +118,17 @@
                     {% endfor %}
                   {% else %}
                     <div class="entry-empty">Sin reservas</div>
+                  {% endif %}
+
+                  {% if room_block.available_blocks %}
+                    <div class="entry-section entry-section--available">
+                      <div class="entry-section-title">Disponible:</div>
+                      <div class="block-chip-list">
+                        {% for block_item in room_block.available_blocks %}
+                          <span class="block-chip">{{ block_item.label }} ({{ block_item.time_label }})</span>
+                        {% endfor %}
+                      </div>
+                    </div>
                   {% endif %}
                 </div>
               {% endfor %}

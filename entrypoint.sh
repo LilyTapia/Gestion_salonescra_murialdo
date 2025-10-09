@@ -8,11 +8,12 @@ import os, sys, time
 import socket
 h = os.environ.get("DB_HOST", "db")
 p = int(os.environ.get("DB_PORT", "3306"))
-s = socket.socket(); s.settimeout(1.0)
+s = socket.socket()
+s.settimeout(1.0)
 try:
-    s.connect((h,p))
+    s.connect((h, p))
     sys.exit(0)
-except Exception as e:
+except Exception:
     sys.exit(1)
 PY
 do

@@ -26,7 +26,46 @@ import calendar
 
 
 MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-WEEKDAY_NAMES = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom']
+WEEKDAY_NAMES = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie']
+
+BASE_DAY_BLOCKS = (
+    ('08:00', '08:45'),
+    ('08:45', '09:30'),
+    ('09:50', '10:35'),
+    ('10:35', '11:20'),
+    ('11:35', '12:20'),
+    ('12:20', '13:05'),
+    ('13:05', '13:50'),
+    ('13:50', '14:35'),
+    ('14:35', '15:20'),
+    ('15:20', '16:05'),
+    ('16:05', '16:50'),
+)
+THURSDAY_BLOCKS = BASE_DAY_BLOCKS + (('17:00', '18:00'),)
+FRIDAY_BLOCKS = BASE_DAY_BLOCKS[:6]
+
+WEEKDAY_BLOCK_SCHEDULE = {
+    calendar.MONDAY: BASE_DAY_BLOCKS,
+    calendar.TUESDAY: BASE_DAY_BLOCKS,
+    calendar.WEDNESDAY: BASE_DAY_BLOCKS,
+    calendar.THURSDAY: THURSDAY_BLOCKS,
+    calendar.FRIDAY: FRIDAY_BLOCKS,
+}
+
+
+def get_blocks_for_weekday(weekday_index):
+    blocks = WEEKDAY_BLOCK_SCHEDULE.get(weekday_index, ())
+    results = []
+    for idx, (start_str, end_str) in enumerate(blocks, start=1):
+        results.append({
+            'index': idx,
+            'label': f'Bloque {idx}',
+            'start_str': start_str,
+            'end_str': end_str,
+            'start_time': time.fromisoformat(start_str),
+            'end_time': time.fromisoformat(end_str),
+        })
+    return results
 
 def get_unread_notifications(user):
     if not user.is_authenticated:
@@ -245,51 +284,62 @@ def reservation_monthly(request):
     for week in month_weeks:
         week_days = []
         for day in week:
+            if day.weekday() >= 5:
+                continue
             daily_map = reservations_by_day.get(day, {})
+            day_blocks = get_blocks_for_weekday(day.weekday())
             room_blocks = []
 
             for room in rooms:
+                room_reservations = sorted(
+                    daily_map.get(room.code, []),
+                    key=lambda r: r.start_time
+                )
 
-                room_reservations = sorted(daily_map.get(room.code, []), key=lambda r: r.start_time)
-
-                formatted_entries = []
-
-                for res in room_reservations:
-
-                    teacher_name = ''
-
-                    if res.user:
-
-                        full_name = (res.user.get_full_name() or '').strip()
-
-                        teacher_name = full_name or res.user.username
-
+                def serialize_reservation(reservation):
+                    if reservation.user:
+                        full_name = (reservation.user.get_full_name() or '').strip()
+                        teacher_name = full_name or reservation.user.username
                     else:
-
                         teacher_name = 'Sin usuario'
-
-                    formatted_entries.append({
-
+                    return {
                         'teacher': teacher_name,
+                        'course': reservation.course.name if reservation.course else '',
+                        'subject': reservation.subject.name if reservation.subject else '',
+                        'time_range': f"{reservation.start_time.strftime('%H:%M')} - {reservation.end_time.strftime('%H:%M')}",
+                    }
 
-                        'course': res.course.name if res.course else '',
+                formatted_entries = [serialize_reservation(res) for res in room_reservations]
 
-                        'subject': res.subject.name if res.subject else '',
-
-                        'time_range': f"{res.start_time.strftime('%H:%M')} - {res.end_time.strftime('%H:%M')}",
-
-                    })
+                block_entries = []
+                for block_def in day_blocks:
+                    block_info = {
+                        'index': block_def['index'],
+                        'label': block_def['label'],
+                        'time_label': f"{block_def['start_str']} - {block_def['end_str']}",
+                        'status': 'available',
+                    }
+                    matching_reservation = next(
+                        (
+                            res for res in room_reservations
+                            if res.start_time < block_def['end_time']
+                            and res.end_time > block_def['start_time']
+                        ),
+                        None
+                    )
+                    if matching_reservation:
+                        block_info['status'] = 'reserved'
+                        block_info['reservation'] = serialize_reservation(matching_reservation)
+                    block_entries.append(block_info)
 
                 room_blocks.append({
-
                     'room': room,
-
-                    'entries': formatted_entries,
-
+                    'reservations': formatted_entries,
+                    'blocks': block_entries,
+                    'reserved_blocks': [item for item in block_entries if item['status'] == 'reserved'],
+                    'available_blocks': [item for item in block_entries if item['status'] == 'available'],
+                    'has_block_schedule': bool(day_blocks),
                 })
-
-
-
             day_blackouts = blackouts_by_day.get(day, [])
 
             full_block_blackouts = [item for item in day_blackouts if item['variant'] in ('holiday', 'general')]
@@ -325,7 +375,8 @@ def reservation_monthly(request):
 
 
 
-        weeks.append(week_days)
+        if week_days:
+            weeks.append(week_days)
 
     def shift_month(base, offset):
         month_value = base.month + offset

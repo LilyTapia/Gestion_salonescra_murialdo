@@ -1972,7 +1972,7 @@ th {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(180px, 1fr));
+  grid-template-columns: repeat(5, minmax(180px, 1fr));
   gap: 0.75rem;
   min-width: 900px;
 }
@@ -2085,6 +2085,55 @@ th {
   font-size: 0.78rem;
   color: #7a859f;
   font-style: italic;
+}
+.entry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.entry-section:last-child {
+  margin-bottom: 0;
+}
+.entry-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #4a5d7a;
+}
+.entry-section--available .entry-section-title {
+  color: #1f5faa;
+}
+.block-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.block-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(31, 95, 170, 0.12);
+  color: #1f5faa;
+  border: 1px solid rgba(31, 95, 170, 0.18);
+  white-space: nowrap;
+}
+.entry-section--available .block-chip {
+  background: rgba(45, 143, 123, 0.12);
+  color: #2d8f7b;
+  border-color: rgba(45, 143, 123, 0.2);
+}
+.block-chip--reserved {
+  background: rgba(234, 84, 85, 0.15);
+  color: #b02a37;
+  border-color: rgba(176, 42, 55, 0.3);
+}
+.entry-line--reserved .entry-info {
+  color: #1f2937;
 }
 @media (max-width: 900px) {
   .calendar-grid {
