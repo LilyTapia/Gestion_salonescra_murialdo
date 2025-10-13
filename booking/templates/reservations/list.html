@@ -5,7 +5,7 @@
 {% if notifications %}
 <div class="notification-overlay" id="notificationOverlay">
   <div class="notification-modal">
-    <h2>Atencion</h2>
+    <h2>Atención</h2>
     <div class="notification-messages">
       {% for note in notifications %}
         <p>{{ note.message|linebreaksbr }}</p>
@@ -89,6 +89,17 @@
 
             <p class="created-at">Creada: {{ reservation.created_at|date:"d/m/Y H:i" }}</p>
           </div>
+          {% if user.is_authenticated %}
+            {% if is_admin or reservation.user_id == user.id %}
+              <div class="reservation-card-actions">
+                <a href="{% url 'reservation_update' reservation.id %}" class="btn btn-secondary">Editar</a>
+                <form method="post" action="{% url 'reservation_cancel' reservation.id %}" class="reservation-card-actions__form">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger" onclick="return confirm('¿Cancelar esta reserva?');">Cancelar</button>
+                </form>
+              </div>
+            {% endif %}
+          {% endif %}
         </div>
       {% endfor %}
     </div>

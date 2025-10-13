@@ -1,4 +1,4 @@
-from django.db import models, transaction
+from django.db import models
 from django.utils import timezone
 from django.conf import settings
 
@@ -36,19 +36,8 @@ class Reservation(models.Model):
         if self.inventory_released:
             return False
 
-        items_list = list(items) if items is not None else list(self.items.select_related('material'))
-
-        with transaction.atomic():
-            for item in items_list:
-                inventory = RoomInventory.objects.select_for_update().get(
-                    room=self.room,
-                    material=item.material,
-                )
-                inventory.quantity += item.quantity
-                inventory.save(update_fields=['quantity'])
-
-            self.inventory_released = True
-            self.save(update_fields=['inventory_released'])
+        self.inventory_released = True
+        self.save(update_fields=['inventory_released'])
 
         return True
 

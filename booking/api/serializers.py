@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from booking.models import Room, Material, RoomInventory, Reservation, ReservationItem, Blackout
+from booking.services import get_reserved_material_quantity
 
 User = get_user_model()
 
@@ -95,24 +96,49 @@ class ReservationSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         items_data = validated_data.pop("items", [])
         room = validated_data["room"]
+        date = validated_data["date"]
+        start = validated_data["start_time"]
+        end = validated_data["end_time"]
+        material_map = self._aggregate_items(items_data)
         with transaction.atomic():
-            r = Reservation.objects.create(user=(request.user if request and request.user.is_authenticated else None), **validated_data)
-            for it in items_data:
-                material = it["material"]; qty = it["quantity"]
-                inv = RoomInventory.objects.select_for_update().get(room=room, material=material)
-                if inv.quantity < qty:
-                    raise serializers.ValidationError(f"Sin stock suficiente de {material.name} en salón {room.code}.")
-                inv.quantity -= qty; inv.save()
-                ReservationItem.objects.create(reservation=r, material=material, quantity=qty)
-        return r
+            self._validate_materials_for_slot(
+                room=room,
+                date=date,
+                start=start,
+                end=end,
+                material_quantities=material_map,
+            )
+            reservation = Reservation.objects.create(
+                user=(request.user if request and request.user.is_authenticated else None),
+                **validated_data
+            )
+            for material, qty in material_map.items():
+                ReservationItem.objects.create(reservation=reservation, material=material, quantity=qty)
+        return reservation
 
-    def _apply_stock_delta(self, room, deltas):
-        for material, delta in deltas.items():
-            inv = RoomInventory.objects.select_for_update().get(room=room, material=material)
-            new_qty = inv.quantity - delta  # delta positivo = consumir más; negativo = devolver
-            if new_qty < 0:
-                raise serializers.ValidationError(f"Stock insuficiente de {material.name} en salón {room.code}.")
-            inv.quantity = new_qty; inv.save()
+    def _aggregate_items(self, items_data):
+        material_map = {}
+        for item in items_data:
+            material = item["material"]
+            material_map[material] = material_map.get(material, 0) + item["quantity"]
+        return material_map
+
+    def _validate_materials_for_slot(self, *, room, date, start, end, material_quantities, exclude_reservation_id=None):
+        for material, qty in material_quantities.items():
+            try:
+                inventory = RoomInventory.objects.select_for_update().get(room=room, material=material)
+            except RoomInventory.DoesNotExist:
+                raise serializers.ValidationError(f"No hay inventario configurado para {material.name} en salón {room.code}.")
+            reserved_overlap = get_reserved_material_quantity(
+                room=room,
+                material_id=material.id,
+                date=date,
+                start_time=start,
+                end_time=end,
+                exclude_reservation_id=exclude_reservation_id,
+            )
+            if reserved_overlap + qty > inventory.quantity:
+                raise serializers.ValidationError(f"Sin stock suficiente de {material.name} en salón {room.code}.")
 
     def update(self, instance, validated_data):
         new_items = validated_data.pop("items", None)
@@ -125,19 +151,24 @@ class ReservationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El salón ya está ocupado en ese horario.")
         with transaction.atomic():
             if new_items is not None:
-                old_map = {it.material: it.quantity for it in instance.items.all()}
-                new_map = {}
-                for it in new_items:
-                    m = it["material"]; q = it["quantity"]
-                    new_map[m] = new_map.get(m,0) + q
-                deltas = {}
-                for m in set(old_map)|set(new_map):
-                    deltas[m] = new_map.get(m,0) - old_map.get(m,0)
-                self._apply_stock_delta(new_room, deltas)
+                material_map = self._aggregate_items(new_items)
+            else:
+                material_map = {}
+                for item in instance.items.all():
+                    material_map[item.material] = material_map.get(item.material, 0) + item.quantity
+            self._validate_materials_for_slot(
+                room=new_room,
+                date=new_date,
+                start=new_start,
+                end=new_end,
+                material_quantities=material_map,
+                exclude_reservation_id=instance.pk,
+            )
+            if new_items is not None:
                 instance.items.all().delete()
-                for m,q in new_map.items():
-                    ReservationItem.objects.create(reservation=instance, material=m, quantity=q)
-            for k,v in validated_data.items():
+                for material, qty in material_map.items():
+                    ReservationItem.objects.create(reservation=instance, material=material, quantity=qty)
+            for k, v in validated_data.items():
                 setattr(instance, k, v)
             instance.save()
         return instance

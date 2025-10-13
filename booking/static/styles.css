@@ -192,6 +192,17 @@ th {
   margin: 0.25rem 0;
 }
 
+.reservation-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.reservation-card-actions__form {
+  margin: 0;
+}
+
 .materials {
   margin-top: 0.5rem;
 }

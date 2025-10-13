@@ -1,7 +1,8 @@
 from django.db import models
 from django.utils import timezone
+from django.db.models import Sum
 
-from .models import Reservation, Course, Subject, TeacherRole
+from .models import Reservation, ReservationItem, Course, Subject, TeacherRole
 from .constants import SUBJECTS_BY_LEVEL
 
 
@@ -27,6 +28,20 @@ def release_overdue_reservations(now=None):
             released += 1
 
     return released
+
+
+def get_reserved_material_quantity(*, room, material_id, date, start_time, end_time, exclude_reservation_id=None):
+    """Return total quantity of a material already reserved for the same slot."""
+    overlap_qs = ReservationItem.objects.filter(
+        reservation__room=room,
+        material_id=material_id,
+        reservation__date=date,
+        reservation__start_time__lt=end_time,
+        reservation__end_time__gt=start_time,
+    )
+    if exclude_reservation_id:
+        overlap_qs = overlap_qs.exclude(reservation_id=exclude_reservation_id)
+    return overlap_qs.aggregate(total=Sum('quantity'))['total'] or 0
 
 
 

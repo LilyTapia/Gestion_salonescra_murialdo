@@ -3,14 +3,17 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 from .forms import ReservationForm, BlackoutForm, MaterialForm, InventoryForm, InventoryUpdateForm, CustomUserCreationForm, AdminUserCreationForm
 from django.http import HttpResponse
 from django.utils import timezone
 from datetime import time, datetime, date, timedelta
+from django.db import transaction
 from django.db.models import Count, Sum, Q
 from collections import defaultdict
 from .models import Room, Material, RoomInventory, Reservation, ReservationItem, Blackout, Notification
-from .services import release_overdue_reservations, build_registration_metadata
+from .services import release_overdue_reservations, build_registration_metadata, get_reserved_material_quantity
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -67,6 +70,34 @@ def get_blocks_for_weekday(weekday_index):
         })
     return results
 
+
+def _max_booking_date(base_date):
+    """Return the furthest date allowed for reservations (1 month ahead)."""
+    if base_date.month == 12:
+        year = base_date.year + 1
+        month = 1
+    else:
+        year = base_date.year
+        month = base_date.month + 1
+    last_day = calendar.monthrange(year, month)[1]
+    day = min(base_date.day, last_day)
+    return date(year, month, day)
+
+
+def _match_reservation_blackouts(room, date_value, start_time, end_time):
+    """Return blackouts generated for a reservation slot."""
+    start_dt = datetime.combine(date_value, start_time)
+    end_dt = datetime.combine(date_value, end_time)
+    return list(
+        Blackout.objects.filter(
+            room=room,
+            start_datetime=start_dt,
+            end_datetime=end_dt,
+            reason__startswith="Reserva de"
+        )
+    )
+
+
 def get_unread_notifications(user):
     if not user.is_authenticated:
         return []
@@ -96,14 +127,25 @@ def index(request):
 
 @user_passes_test(lambda u: u.is_authenticated)
 def reservation_create(request):
-    materials = Material.objects.order_by('name')
+    release_overdue_reservations()
+    materials = list(Material.objects.order_by('name'))
+    material_values = {m.id: '' for m in materials}
     if request.method == "POST":
         form = ReservationForm(request.POST, user=request.user)
         items = []
         for m in materials:
-            q = int(request.POST.get(f"qty_{m.id}", 0) or 0)
+            raw_value = (request.POST.get(f"qty_{m.id}", "") or "").strip()
+            material_values[m.id] = raw_value
+            try:
+                q = int(raw_value or 0)
+            except (TypeError, ValueError):
+                messages.error(request, "Las cantidades de materiales deben ser números enteros.")
+                return redirect('reservation_create')
+            if q < 0:
+                messages.error(request, "Las cantidades de materiales no pueden ser negativas.")
+                return redirect('reservation_create')
             if q > 0:
-                items.append((m.id, q))
+                items.append((m, q))
         if form.is_valid():
             room = form.cleaned_data["room"]
             date = form.cleaned_data["date"]
@@ -117,10 +159,10 @@ def reservation_create(request):
                 messages.error(request, "La fecha de la reserva debe ser igual o posterior a hoy.")
                 return redirect('reservation_create')
 
-            max_allowed = today + timedelta(days=30)
+            max_allowed = _max_booking_date(today)
             is_admin_user = request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()
             if not is_admin_user and date > max_allowed:
-                messages.error(request, "Las reservas solo se permiten hasta con 30 dias de anticipacion.")
+                messages.error(request, "Las reservas solo se permiten hasta con 1 mes de anticipación.")
                 return redirect('reservation_create')
 
             # Validaciones simples (choque de reservas)
@@ -145,44 +187,264 @@ def reservation_create(request):
                 messages.error(request, "Existe un bloqueo de agenda en ese horario (feriado/reunión).")
                 return redirect('reservation_create')
 
-            # Stock
-            for mid, qty in items:
-                inv = RoomInventory.objects.filter(room=room, material_id=mid).first()
-                if not inv or inv.quantity < qty:
-                    messages.error(request, "No hay stock suficiente de materiales para ese salón.")
-                    return redirect('reservation_create')
+            with transaction.atomic():
+                # Stock availability check (per material)
+                for material, qty in items:
+                    inventory = (
+                        RoomInventory.objects.select_for_update()
+                        .filter(room=room, material=material)
+                        .first()
+                    )
+                    if not inventory:
+                        messages.error(request, f"No hay inventario configurado para {material.name} en ese sal�n.")
+                        return redirect('reservation_create')
 
-            r = Reservation.objects.create(
-                room=room,
-                date=date,
-                start_time=start,
-                end_time=end,
-                course=course,
-                subject=subject,
-                user=request.user
-            )
-            for mid, qty in items:
-                ReservationItem.objects.create(reservation=r, material_id=mid, quantity=qty)
-                inv = RoomInventory.objects.get(room=room, material_id=mid)
-                inv.quantity -= qty; inv.save()
+                    reserved_overlap = get_reserved_material_quantity(
+                        room=room,
+                        material_id=material.id,
+                        date=date,
+                        start_time=start,
+                        end_time=end,
+                    )
+                    if reserved_overlap + qty > inventory.quantity:
+                        messages.error(request, "No hay stock suficiente de materiales para ese sal�n.")
+                        return redirect('reservation_create')
 
-            # Create blackout for the reservation
-            start_dt = _join(date, start)
-            end_dt = _join(date, end)
-            username = request.user.username
-            Blackout.objects.create(
-                room=room,
-                start_datetime=start_dt,
-                end_datetime=end_dt,
-                reason=f"Reserva de {username}",
-                created_by=request.user
-            )
+                r = Reservation.objects.create(
+                    room=room,
+                    date=date,
+                    start_time=start,
+                    end_time=end,
+                    course=course,
+                    subject=subject,
+                    user=request.user
+                )
+                for material, qty in items:
+                    ReservationItem.objects.create(reservation=r, material=material, quantity=qty)
+
+                # Create blackout for the reservation
+                start_dt = _join(date, start)
+                end_dt = _join(date, end)
+                username = request.user.username
+                Blackout.objects.create(
+                    room=room,
+                    start_datetime=start_dt,
+                    end_datetime=end_dt,
+                    reason=f"Reserva de {username}",
+                    created_by=request.user
+                )
 
             messages.success(request, "Reserva creada con éxito.")
             return redirect('index')
     else:
         form = ReservationForm(user=request.user)
-    return render(request, 'reservation_form.html', {'form': form, 'materials': materials})
+    context = {
+        'form': form,
+        'material_inputs': [(m, material_values.get(m.id, '')) for m in materials],
+        'form_title': 'Nueva reserva',
+        'submit_label': 'Crear reserva',
+        'cancel_url': reverse('reservation_list'),
+        'is_edit': False,
+    }
+    return render(request, 'reservation_form.html', context)
+
+
+@user_passes_test(lambda u: u.is_authenticated)
+def reservation_update(request, pk):
+    release_overdue_reservations()
+    reservation = get_object_or_404(
+        Reservation.objects.select_related('room', 'user', 'course', 'subject').prefetch_related('items__material'),
+        pk=pk
+    )
+    is_admin_user = request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()
+    if reservation.user_id != request.user.id and not is_admin_user:
+        messages.error(request, "No tienes permiso para editar esta reserva.")
+        return redirect('reservation_list')
+
+    materials = list(Material.objects.order_by('name'))
+    material_values = {m.id: '' for m in materials}
+
+    if request.method == "POST":
+        form = ReservationForm(request.POST, user=request.user)
+        items = []
+        for m in materials:
+            raw_value = (request.POST.get(f"qty_{m.id}", "") or "").strip()
+            material_values[m.id] = raw_value
+            try:
+                q = int(raw_value or 0)
+            except (TypeError, ValueError):
+                messages.error(request, "Las cantidades de materiales deben ser números enteros.")
+                return redirect('reservation_update', pk=pk)
+            if q < 0:
+                messages.error(request, "Las cantidades de materiales no pueden ser negativas.")
+                return redirect('reservation_update', pk=pk)
+            if q > 0:
+                items.append((m, q))
+
+        if form.is_valid():
+            room = form.cleaned_data["room"]
+            date_value = form.cleaned_data["date"]
+            start = form.cleaned_data["start_time"]
+            end = form.cleaned_data["end_time"]
+            course = form.cleaned_data["course"]
+            subject = form.cleaned_data["subject"]
+
+            today = timezone.localdate()
+            if date_value < today:
+                messages.error(request, "La fecha de la reserva debe ser igual o posterior a hoy.")
+                return redirect('reservation_update', pk=pk)
+
+            max_allowed = _max_booking_date(today)
+            if not is_admin_user and date_value > max_allowed:
+                messages.error(request, "Las reservas solo se permiten hasta con 1 mes de anticipación.")
+                return redirect('reservation_update', pk=pk)
+
+            exists = (
+                Reservation.objects
+                .filter(room=room, date=date_value, start_time__lt=end, end_time__gt=start)
+                .exclude(pk=reservation.pk)
+                .exists()
+            )
+            if exists:
+                messages.error(request, "El sal�n ya est� ocupado en ese horario.")
+                return redirect('reservation_update', pk=pk)
+
+            if not (time(8,0) <= start < time(18,0) and time(8,0) < end <= time(18,0)):
+                messages.error(request, "Horario permitido: 08:00 a 18:00.")
+                return redirect('reservation_update', pk=pk)
+
+            old_blackouts = _match_reservation_blackouts(reservation.room, reservation.date, reservation.start_time, reservation.end_time)
+            old_blackout_ids = [b.id for b in old_blackouts]
+
+            start_dt = datetime.combine(date_value, start)
+            end_dt = datetime.combine(date_value, end)
+            blackout_exists = (
+                Blackout.objects
+                .filter(start_datetime__lt=end_dt, end_datetime__gt=start_dt)
+                .filter(Q(room__isnull=True) | Q(room=room))
+                .exclude(id__in=old_blackout_ids)
+                .exists()
+            )
+            if blackout_exists:
+                messages.error(request, "Existe un bloqueo de agenda en ese horario (feriado/reunión).")
+                return redirect('reservation_update', pk=pk)
+
+            with transaction.atomic():
+                for material, qty in items:
+                    inventory = (
+                        RoomInventory.objects.select_for_update()
+                        .filter(room=room, material=material)
+                        .first()
+                    )
+                    if not inventory:
+                        messages.error(request, f"No hay inventario configurado para {material.name} en ese sal�n.")
+                        return redirect('reservation_update', pk=pk)
+
+                    reserved_overlap = get_reserved_material_quantity(
+                        room=room,
+                        material_id=material.id,
+                        date=date_value,
+                        start_time=start,
+                        end_time=end,
+                        exclude_reservation_id=reservation.id,
+                    )
+                    if reserved_overlap + qty > inventory.quantity:
+                        messages.error(request, "No hay stock suficiente de materiales para ese sal�n.")
+                        return redirect('reservation_update', pk=pk)
+
+                reservation.room = room
+                reservation.date = date_value
+                reservation.start_time = start
+                reservation.end_time = end
+                reservation.course = course
+                reservation.subject = subject
+                reservation.save()
+
+                existing_items = {item.material_id: item for item in reservation.items.select_related('material')}
+                new_material_ids = set()
+                for material, qty in items:
+                    new_material_ids.add(material.id)
+                    item = existing_items.get(material.id)
+                    if item:
+                        if item.quantity != qty:
+                            item.quantity = qty
+                            item.save(update_fields=['quantity'])
+                    else:
+                        ReservationItem.objects.create(reservation=reservation, material=material, quantity=qty)
+
+                for material_id, item in existing_items.items():
+                    if material_id not in new_material_ids:
+                        item.delete()
+
+                blackout_owner = reservation.user or request.user
+                reason_username = reservation.user.username if reservation.user else request.user.username
+                if old_blackouts:
+                    for blackout in old_blackouts:
+                        blackout.room = room
+                        blackout.start_datetime = start_dt
+                        blackout.end_datetime = end_dt
+                        blackout.reason = f"Reserva de {reason_username}"
+                        blackout.created_by = blackout_owner
+                        blackout.save(update_fields=['room', 'start_datetime', 'end_datetime', 'reason', 'created_by'])
+                else:
+                    Blackout.objects.create(
+                        room=room,
+                        start_datetime=start_dt,
+                        end_datetime=end_dt,
+                        reason=f"Reserva de {reason_username}",
+                        created_by=blackout_owner,
+                    )
+
+            messages.success(request, "Reserva actualizada con éxito.")
+            return redirect('reservation_list')
+    else:
+        initial_data = {
+            'room': reservation.room,
+            'date': reservation.date,
+            'start_time': reservation.start_time,
+            'end_time': reservation.end_time,
+            'course': reservation.course,
+            'subject': reservation.subject,
+        }
+        form = ReservationForm(initial=initial_data, user=request.user)
+        for item in reservation.items.all():
+            material_values[item.material_id] = str(item.quantity)
+    context = {
+        'form': form,
+        'reservation': reservation,
+        'material_inputs': [(m, material_values.get(m.id, '')) for m in materials],
+        'form_title': 'Editar reserva',
+        'submit_label': 'Actualizar reserva',
+        'cancel_url': reverse('reservation_list'),
+        'is_edit': True,
+    }
+    return render(request, 'reservation_form.html', context)
+
+
+@require_POST
+@user_passes_test(lambda u: u.is_authenticated)
+def reservation_cancel(request, pk):
+    release_overdue_reservations()
+    reservation = get_object_or_404(
+        Reservation.objects.select_related('room', 'user').prefetch_related('items__material'),
+        pk=pk
+    )
+    is_admin_user = request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()
+    if reservation.user_id != request.user.id and not is_admin_user:
+        messages.error(request, "No tienes permiso para cancelar esta reserva.")
+        return redirect('reservation_list')
+
+    blackouts = _match_reservation_blackouts(reservation.room, reservation.date, reservation.start_time, reservation.end_time)
+    blackout_ids = [b.id for b in blackouts]
+
+    with transaction.atomic():
+        reservation.release_inventory(items=reservation.items.select_related('material'))
+        reservation.delete()
+        if blackout_ids:
+            Blackout.objects.filter(id__in=blackout_ids).delete()
+
+    messages.success(request, "Reserva cancelada con éxito.")
+    return redirect('reservation_list')
 
 
 def reservation_list(request):
@@ -192,14 +454,20 @@ def reservation_list(request):
     if request.user.is_authenticated:
         is_admin = request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()
         if is_admin:
-            reservations = Reservation.objects.select_related('room', 'user', 'course', 'subject').prefetch_related('items__material').order_by('-date', '-start_time')
+            reservations = Reservation.objects.select_related('room', 'user', 'course', 'subject').prefetch_related('items__material').order_by('date', 'start_time', 'room__code')
         else:
-            reservations = Reservation.objects.filter(user=request.user).select_related('room', 'user', 'course', 'subject').prefetch_related('items__material').order_by('-date', '-start_time')
+            reservations = Reservation.objects.filter(user=request.user).select_related('room', 'user', 'course', 'subject').prefetch_related('items__material').order_by('date', 'start_time', 'room__code')
         notifications = get_unread_notifications(request.user)
     else:
         reservations = Reservation.objects.none()
+        is_admin = False
 
-    context = {'reservations': reservations, 'notifications': notifications, 'active_view': 'history'}
+    context = {
+        'reservations': reservations,
+        'notifications': notifications,
+        'active_view': 'history',
+        'is_admin': is_admin,
+    }
     return render(request, 'reservations/list.html', context)
 
 
@@ -1107,6 +1375,9 @@ def export_reports_excel(request):
     wb.save(response)
     
     return response
+
+
+
 
 
 

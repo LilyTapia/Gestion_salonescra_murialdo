@@ -4,7 +4,7 @@
 {% if notifications %}
 <div class="notification-overlay" id="notificationOverlay">
   <div class="notification-modal">
-    <h2>Atencion</h2>
+    <h2>Atención</h2>
     <div class="notification-messages">
       {% for note in notifications %}
         <p>{{ note.message|linebreaksbr }}</p>
@@ -60,36 +60,44 @@
             {% if day.is_full_day_block %}
               <div class="day-full-block">
                 {% for blackout in day.full_block_blackouts %}
-                  <div class="full-block-chip">
-                    <div class="chip-title">Bloqueo</div>
-                    {% if blackout.scope and blackout.scope != blackout.reason %}
-                      <div class="chip-subtitle">{{ blackout.scope }}</div>
+                  {% with reason=blackout.reason|default_if_none:'' %}
+                    {% if reason|slice:":10" != "Reserva de" %}
+                      <div class="full-block-chip">
+                        <div class="chip-title">Bloqueo</div>
+                        {% if blackout.scope and blackout.scope != blackout.reason %}
+                          <div class="chip-subtitle">{{ blackout.scope }}</div>
+                        {% endif %}
+                        {% if blackout.time_label %}
+                          <div class="chip-subtitle">{{ blackout.time_label }}</div>
+                        {% endif %}
+                        {% if blackout.reason %}
+                          <div class="chip-reason">{{ blackout.reason }}</div>
+                        {% endif %}
+                      </div>
                     {% endif %}
-                    {% if blackout.time_label %}
-                      <div class="chip-subtitle">{{ blackout.time_label }}</div>
-                    {% endif %}
-                    {% if blackout.reason %}
-                      <div class="chip-reason">{{ blackout.reason }}</div>
-                    {% endif %}
-                  </div>
+                  {% endwith %}
                 {% endfor %}
               </div>
             {% else %}
               {% if day.blackouts %}
                 <div class="day-blackouts">
                   {% for blackout in day.blackouts %}
-                    <div class="blackout-chip">
-                      <div class="chip-title">Bloqueo</div>
-                      {% if blackout.scope %}
-                        <div class="chip-subtitle">{{ blackout.scope }}</div>
+                    {% with reason=blackout.reason|default_if_none:'' %}
+                      {% if reason|slice:":10" != "Reserva de" %}
+                        <div class="blackout-chip">
+                          <div class="chip-title">Bloqueo</div>
+                          {% if blackout.scope %}
+                            <div class="chip-subtitle">{{ blackout.scope }}</div>
+                          {% endif %}
+                          {% if blackout.time_label %}
+                            <div class="chip-subtitle">{{ blackout.time_label }}</div>
+                          {% endif %}
+                          {% if blackout.reason %}
+                            <div class="chip-reason">{{ blackout.reason }}</div>
+                          {% endif %}
+                        </div>
                       {% endif %}
-                      {% if blackout.time_label %}
-                        <div class="chip-subtitle">{{ blackout.time_label }}</div>
-                      {% endif %}
-                      {% if blackout.reason %}
-                        <div class="chip-reason">{{ blackout.reason }}</div>
-                      {% endif %}
-                    </div>
+                    {% endwith %}
                   {% endfor %}
                 </div>
               {% endif %}
@@ -99,7 +107,7 @@
 
                   {% if room_block.reserved_blocks %}
                     <div class="entry-section">
-                      <div class="entry-section-title">Reservas</div>
+                      <div class="entry-section-title">Reservado</div>
                       {% for block_item in room_block.reserved_blocks %}
                         <div class="entry-line entry-line--reserved">
                           <span class="block-chip block-chip--reserved">{{ block_item.label }} ({{ block_item.time_label }})</span>

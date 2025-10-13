@@ -65,13 +65,13 @@
             <button type="button" class="message-close" id="globalMessageDismiss" aria-label="Cerrar mensaje">&times;</button>
             {% with message.tags|default:'' as level %}
               {% if 'error' in level or 'danger' in level %}
-                <h2>Atencion</h2>
+                <h2>Atención</h2>
               {% elif 'success' in level %}
-                <h2>Operacion exitosa</h2>
+                <h2>Operación exitosa</h2>
               {% elif 'warning' in level %}
                 <h2>Advertencia</h2>
               {% else %}
-                <h2>Informacion</h2>
+                <h2>Información</h2>
               {% endif %}
             {% endwith %}
             <div class="message-messages">

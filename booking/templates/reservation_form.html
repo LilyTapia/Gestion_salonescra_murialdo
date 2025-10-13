@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="form-container">
-  <h2>Nueva reserva</h2>
+  <h2>{{ form_title|default:"Nueva reserva" }}</h2>
   
   <form method="post" class="reservation-form">
     {% csrf_token %}
@@ -100,18 +100,25 @@
       <p class="section-description">Selecciona la cantidad de materiales que necesitas para tu reserva</p>
       
       <div class="materials-grid">
-        {% for m in materials %}
+        {% for material, quantity in material_inputs %}
           <div class="material-item">
-            <label class="material-label">{{ m.name }}</label>
-            <input type="number" name="qty_{{ m.id }}" min="0" max="50" placeholder="0" class="material-input">
+            <label class="material-label">{{ material.name }}</label>
+            <input
+              type="number"
+              name="qty_{{ material.id }}"
+              min="0"
+              max="50"
+              placeholder="0"
+              class="material-input"
+              value="{{ quantity|default_if_none:'' }}">
           </div>
         {% endfor %}
       </div>
     </div>
     
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Crear reserva</button>
-      <a href="/reservas/" class="btn btn-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-primary">{{ submit_label|default:"Crear reserva" }}</button>
+      <a href="{{ cancel_url|default:'/reservas/' }}" class="btn btn-secondary">Cancelar</a>
     </div>
   </form>
 </div>
@@ -156,15 +163,23 @@
   [startInput, endInput].forEach(i => { if (i) i.readOnly = true; });
 
   function setTimes(dayIdx, idx){
-    const [ini, fin] = SCHEDULE[dayIdx][idx];
+    const schedule = SCHEDULE[dayIdx];
+    if (!schedule || !schedule[idx]){
+      startInput.value = "";
+      endInput.value = "";
+      blockHelp.textContent = "Selecciona un d\u00eda h\u00e1bil (lunes a viernes).";
+      return;
+    }
+    const [ini, fin] = schedule[idx];
     startInput.value = ini;
     endInput.value   = fin;
-    blockHelp.textContent = `Horario del bloque ${idx+1}: ${ini} – ${fin}`;
+    blockHelp.textContent = `Horario del bloque ${idx+1}: ${ini} - ${fin}`;
   }
 
   function loadBlocksFor(dayIdx){
     blockSelect.innerHTML = "";
-    if (!SCHEDULE[dayIdx]){
+    const schedule = SCHEDULE[dayIdx];
+    if (!schedule){
       blockSelect.add(new Option("No hay bloques disponibles", "", true, true));
       blockSelect.disabled = true;
       startInput.value = ""; endInput.value = "";
@@ -172,11 +187,17 @@
       return;
     }
     blockSelect.disabled = false;
-    SCHEDULE[dayIdx].forEach((range, i) => {
+    const currentStart = startInput.value;
+    const currentEnd = endInput.value;
+    let targetIndex = 0;
+    schedule.forEach((range, i) => {
       blockSelect.add(new Option(`Bloque ${i+1}`, String(i+1)));
+      if (range[0] === currentStart && range[1] === currentEnd){
+        targetIndex = i;
+      }
     });
-    blockSelect.selectedIndex = 0;
-    setTimes(dayIdx, 0);
+    blockSelect.selectedIndex = targetIndex;
+    setTimes(dayIdx, targetIndex);
   }
 
   if (dateInput){

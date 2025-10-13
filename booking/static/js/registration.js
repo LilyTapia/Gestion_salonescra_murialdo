@@ -66,6 +66,9 @@
     const subjectsContainer = document.querySelector(config.subjectsContainerSelector);
     const metadata = config.metadata || {};
 
+    if (rolesField) {
+      rolesField.multiple = true;
+    }
     if (coursesField) {
       coursesField.multiple = true;
     }
@@ -73,6 +76,7 @@
       subjectsField.multiple = true;
     }
 
+    enableToggleMulti(rolesField);
     enableToggleMulti(coursesField);
     enableToggleMulti(subjectsField);
 
