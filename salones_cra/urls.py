@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', booking_views.index, name='index'),
     path('reservas/', booking_views.reservation_list, name='reservation_list'),
+    path('panel/', booking_views.admin_dashboard, name='admin_dashboard'),
     path('reservas/mensual/', booking_views.reservation_monthly, name='reservation_monthly'),
     path('reservas/nueva/', booking_views.reservation_create, name='reservation_create'),
     path('reservas/<int:pk>/editar/', booking_views.reservation_update, name='reservation_update'),
@@ -38,4 +39,3 @@ urlpatterns = [
     path('cuentas/registro/', booking_views.user_register, name='register'),
     path('api/', include('booking.api.urls')),
 ]
-

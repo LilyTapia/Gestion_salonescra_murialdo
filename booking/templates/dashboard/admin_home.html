@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block body_class %} panel-home{% endblock %}
+
+{% block content %}
+
+<section class="admin-dashboard">
+  <div class="admin-hero">
+    <h2 class="admin-hero__title">Bienvenido/a {{ display_name }}</h2>
+    <p class="admin-hero__subtitle">
+      Gestiona los salones del CRA y explora las secciones para administrar reservas, materiales y usuarios al día.
+    </p>
+  </div>
+
+  <div class="admin-stats">
+    <div class="admin-stat">
+      <span class="admin-stat__label">Reservas totales</span>
+      <span class="admin-stat__value">{{ stats.reservations }}</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__label">Materiales registrados</span>
+      <span class="admin-stat__value">{{ stats.materials }}</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__label">Docentes registrados</span>
+      <span class="admin-stat__value">{{ stats.teachers }}</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__label">Reservas para hoy</span>
+      <span class="admin-stat__value">{{ stats.today_reservations }}</span>
+    </div>
+  </div>
+
+  <div class="admin-grid">
+    {% for link in quick_links %}
+      <article class="admin-card admin-card--{{ link.tag }}">
+        <div class="admin-card__content">
+          <h3>{{ link.title }}</h3>
+          <p>{{ link.description }}</p>
+        </div>
+        <a href="{{ link.url }}" class="admin-card__action">{{ link.cta }}</a>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

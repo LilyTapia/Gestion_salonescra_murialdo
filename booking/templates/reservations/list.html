@@ -111,7 +111,12 @@
       {% endif %}
     </div>
   {% endif %}
+
+  {% if is_admin %}
+    <div class="navigation-section">
+      <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">Volver al inicio</a>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
-
 

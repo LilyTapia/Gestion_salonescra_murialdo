@@ -17,7 +17,7 @@
   <meta http-equiv="Expires" content="0">
 </head>
 
-<body class="{% if user.is_staff %}is-admin{% endif %}">
+<body class="{% if user.is_staff %}is-admin{% endif %}{% block body_class %}{% endblock %}">
   <!-- HEADER -->
   <header class="site-header">
   <div class="header-bar">
@@ -35,19 +35,19 @@
     </div>
 
     <!-- DERECHA: NAV en la misma línea -->
-    <nav class="header-actions">
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú de navegación">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <nav class="header-actions" id="mainNav">
       {% if user.is_authenticated %}
-        <a href="/reservas/" {% if '/reservas/' in request.path %}class="active"{% endif %}>Reservas</a>
-
         {% if user.is_staff %}
-          <a href="/bloqueos/" {% if '/bloqueos/' in request.path %}class="active"{% endif %}>Bloqueos</a>
-          <a href="/materiales/" {% if '/materiales/' in request.path %}class="active"{% endif %}>Materiales</a>
-          <a href="/inventario/" {% if '/inventario/' in request.path %}class="active"{% endif %}>Inventario</a>
-          <a href="/usuarios/" {% if '/usuarios/' in request.path %}class="active"{% endif %}>Usuarios</a>
-          <a href="/reportes/" {% if '/reportes/' in request.path %}class="active"{% endif %}>Reportes</a>
+          <a href="/cuentas/logout/">Cerrar sesión ({{ user.username }})</a>
+        {% else %}
+          <a href="/reservas/" {% if '/reservas/' in request.path %}class="active"{% endif %}>Reservas</a>
+          <a href="/cuentas/logout/">Cerrar sesión ({{ user.username }})</a>
         {% endif %}
-
-        <a href="/cuentas/logout/">Cerrar sesión ({{ user.username }})</a>
       {% else %}
         <a href="/cuentas/login/" {% if '/cuentas/login/' in request.path %}class="active"{% endif %}>Iniciar sesión</a>
         <a href="/cuentas/registro/" {% if '/cuentas/registro/' in request.path %}class="active"{% endif %}>Registrarse</a>
@@ -105,6 +105,35 @@
     if (performance?.navigation?.type === performance.navigation.TYPE_BACK_FORWARD) {
       location.reload();
     }
+    document.addEventListener('DOMContentLoaded', function () {
+      var navToggle = document.getElementById('navToggle');
+      var mainNav = document.getElementById('mainNav');
+      if (navToggle && mainNav) {
+        navToggle.addEventListener('click', function () {
+          var isOpen = navToggle.classList.toggle('is-open');
+          if (isOpen) {
+            mainNav.classList.add('is-open');
+            navToggle.setAttribute('aria-pressed', 'true');
+            document.body.classList.add('menu-open');
+            navToggle.setAttribute('aria-label', 'Cerrar menú de navegación');
+          } else {
+            mainNav.classList.remove('is-open');
+            navToggle.setAttribute('aria-pressed', 'false');
+            document.body.classList.remove('menu-open');
+            navToggle.setAttribute('aria-label', 'Abrir menú de navegación');
+          }
+        });
+        mainNav.addEventListener('click', function (event) {
+          if (event.target.tagName === 'A') {
+            navToggle.classList.remove('is-open');
+            mainNav.classList.remove('is-open');
+            navToggle.setAttribute('aria-pressed', 'false');
+            document.body.classList.remove('menu-open');
+            navToggle.setAttribute('aria-label', 'Abrir menú de navegación');
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

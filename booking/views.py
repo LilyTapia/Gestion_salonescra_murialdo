@@ -104,14 +104,87 @@ def index(request):
     # Redirect unauthenticated users to login
     if not request.user.is_authenticated:
         return redirect('login')
-    
+
     # Redirect based on user type
     if request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists():
-        # Admin users go to reports
-        return redirect('reports')
+        # Admin users go to dashboard
+        return redirect('admin_dashboard')
     else:
         # Teachers and other users go to reservations
         return redirect('reservation_list')
+
+
+@user_passes_test(is_library_admin)
+def admin_dashboard(request):
+    """Home section for library administrators with quick actions."""
+    display_name = (
+        request.user.get_full_name()
+        or request.user.first_name
+        or request.user.username
+    )
+
+    quick_links = [
+        {
+            'title': 'Reservas',
+            'description': 'Revisa y administra todas las reservas creadas.',
+            'url': reverse('reservation_list'),
+            'cta': 'Ir a reservas',
+            'tag': 'calendar',
+        },
+        {
+            'title': 'Bloqueos',
+            'description': 'Configura feriados y bloqueos de agenda.',
+            'url': reverse('blackout_list'),
+            'cta': 'Ir a bloqueos',
+            'tag': 'stopwatch',
+        },
+        {
+            'title': 'Materiales',
+            'description': 'Actualiza el catálogo disponible para préstamo.',
+            'url': reverse('material_list'),
+            'cta': 'Ir a materiales',
+            'tag': 'materials',
+        },
+        {
+            'title': 'Inventario',
+            'description': 'Controla el stock por salón y disponibilidad.',
+            'url': reverse('inventory_list'),
+            'cta': 'Ir a inventario',
+            'tag': 'inventory',
+        },
+        {
+            'title': 'Usuarios',
+            'description': 'Gestiona docentes y permisos de acceso.',
+            'url': reverse('user_list'),
+            'cta': 'Ir a usuarios',
+            'tag': 'users',
+        },
+        {
+            'title': 'Reportes',
+            'description': 'Consulta métricas y exporta información.',
+            'url': reverse('reports'),
+            'cta': 'Ir a reportes',
+            'tag': 'reports',
+        },
+    ]
+
+    teacher_count = User.objects.filter(groups__name='Docentes').distinct().count()
+    if teacher_count == 0:
+        teacher_count = User.objects.filter(is_staff=False).count()
+
+    stats = {
+        'reservations': Reservation.objects.count(),
+        'materials': Material.objects.count(),
+        'teachers': teacher_count,
+        'today_reservations': Reservation.objects.filter(date=timezone.localdate()).count(),
+    }
+
+    context = {
+        'display_name': display_name,
+        'quick_links': quick_links,
+        'stats': stats,
+    }
+    return render(request, 'dashboard/admin_home.html', context)
 
 @user_passes_test(lambda u: u.is_authenticated)
 def reservation_create(request):
@@ -194,7 +267,7 @@ def reservation_create(request):
                         end_time=end,
                     )
                     if reserved_overlap + qty > inventory.quantity:
-                        messages.error(request, "No hay stock suficiente de materiales para ese sal�n.")
+                        messages.error(request, "No hay stock suficiente de materiales para ese salón.")
                         return redirect('reservation_create')
 
                 r = Reservation.objects.create(
@@ -293,7 +366,7 @@ def reservation_update(request, pk):
                 .exists()
             )
             if exists:
-                messages.error(request, "El sal�n ya est� ocupado en ese horario.")
+                messages.error(request, "El salón ya está ocupado en ese horario.")
                 return redirect('reservation_update', pk=pk)
 
             if not (time(8,0) <= start < time(18,0) and time(8,0) < end <= time(18,0)):
@@ -324,7 +397,7 @@ def reservation_update(request, pk):
                         .first()
                     )
                     if not inventory:
-                        messages.error(request, f"No hay inventario configurado para {material.name} en ese sal�n.")
+                        messages.error(request, f"No hay inventario configurado para {material.name} en ese salón.")
                         return redirect('reservation_update', pk=pk)
 
                     reserved_overlap = get_reserved_material_quantity(
@@ -336,7 +409,7 @@ def reservation_update(request, pk):
                         exclude_reservation_id=reservation.id,
                     )
                     if reserved_overlap + qty > inventory.quantity:
-                        messages.error(request, "No hay stock suficiente de materiales para ese sal�n.")
+                        messages.error(request, "No hay stock suficiente de materiales para ese salón.")
                         return redirect('reservation_update', pk=pk)
 
                 reservation.room = room
@@ -593,6 +666,7 @@ def reservation_monthly(request):
                     'blocks': block_entries,
                     'reserved_blocks': [item for item in block_entries if item['status'] == 'reserved'],
                     'available_blocks': [item for item in block_entries if item['status'] == 'available'],
+                    'block_map': {item['index']: item for item in block_entries},
                     'has_block_schedule': bool(day_blocks),
                 })
             day_blackouts = blackouts_by_day.get(day, [])
@@ -602,30 +676,56 @@ def reservation_monthly(request):
 
             is_full_day_block = bool(full_block_blackouts)
 
-
+            room_schedules_map = {rb['room'].code: {'room': rb['room'], 'blocks': []} for rb in room_blocks}
+            block_schedule = []
+            if room_blocks and day_blocks and not is_full_day_block:
+                for block_def in day_blocks:
+                    schedule_row = {
+                        'index': block_def['index'],
+                        'label': block_def['label'],
+                        'time_label': f"{block_def['start_str']} - {block_def['end_str']}",
+                        'rooms': [],
+                    }
+                    for room_block in room_blocks:
+                        block_info = room_block['block_map'].get(block_def['index'], {})
+                        schedule_row['rooms'].append({
+                            'room_code': room_block['room'].code,
+                            'status': block_info.get('status', 'available'),
+                            'reservation': block_info.get('reservation'),
+                        })
+                        room_entry = room_schedules_map[room_block['room'].code]
+                        room_entry['blocks'].append({
+                            'label': block_def['label'],
+                            'time_label': f"{block_def['start_str']} - {block_def['end_str']}",
+                            'status': block_info.get('status', 'available'),
+                            'reservation': block_info.get('reservation'),
+                        })
+                    block_schedule.append(schedule_row)
+            room_schedules = []
+            if not is_full_day_block and room_schedules_map:
+                for room in rooms:
+                    entry = room_schedules_map.get(room.code)
+                    if entry:
+                        room_schedules.append({
+                            'room': entry['room'],
+                            'blocks': entry['blocks'],
+                        })
 
             week_days.append({
-
                 'date': day,
-
                 'in_month': day.month == display_date.month,
-
                 'is_today': day == today,
-
                 'is_weekend': day.weekday() >= 5,
-
                 'room_blocks': [] if is_full_day_block else room_blocks,
-
                 'blackouts': room_level_blackouts if not is_full_day_block else [],
-
                 'full_block_blackouts': full_block_blackouts,
-
                 'is_holiday': any(item['variant'] == 'holiday' for item in full_block_blackouts),
-
                 'has_blackouts': bool(day_blackouts),
-
                 'is_full_day_block': is_full_day_block,
-
+                'block_schedule': block_schedule,
+                'has_schedule': bool(block_schedule),
+                'schedule_rooms': [rb['room'] for rb in room_blocks] if not is_full_day_block else [],
+                'room_schedules': room_schedules,
             })
 
 
@@ -649,8 +749,12 @@ def reservation_monthly(request):
 
     month_label = f"{MONTH_NAMES[display_date.month]} {display_date.year}"
 
+    is_admin = request.user.is_authenticated and (
+        request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()
+    )
+
     notifications = []
-    if request.user.is_authenticated and not (request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()):
+    if request.user.is_authenticated and not is_admin:
         notifications = get_unread_notifications(request.user)
 
     context = {
@@ -667,6 +771,7 @@ def reservation_monthly(request):
         'rooms': rooms,
         'notifications': notifications,
         'active_view': 'calendar',
+        'is_admin': is_admin,
     }
     return render(request, 'reservations/calendar.html', context)
 
@@ -799,7 +904,7 @@ def blackout_delete(request, pk):
         obj.delete()
         messages.success(request, "Bloqueo eliminado.")
         return redirect('blackout_list')
-    return render(request, 'blackouts/delete.html', {'obj': obj})
+    return render(request, 'blackouts/confirm_delete.html', {'obj': obj})
 
 # Material Management Views
 @user_passes_test(is_library_admin)
@@ -1362,11 +1467,3 @@ def export_reports_excel(request):
     wb.save(response)
     
     return response
-
-
-
-
-
-
-
-

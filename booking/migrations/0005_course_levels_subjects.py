@@ -63,7 +63,7 @@ def apply_course_levels(apps, schema_editor):
     for course in Course.objects.all():
         name = course.name.lower()
         if 'medio' in name:
-            if name.strip().startswith(('1', '2')):
+            if name.strip().startswith(('1°', '2°')):
                 course.level_group = 'MEDIO_1_2'
             else:
                 course.level_group = 'MEDIO_3_4'
@@ -107,9 +107,9 @@ class Migration(migrations.Migration):
             name='level_group',
             field=models.CharField(
                 choices=[
-                    ('BASICO', '1 a 8 Basico'),
-                    ('MEDIO_1_2', '1 y 2 Medio'),
-                    ('MEDIO_3_4', '3 y 4 Medio'),
+                    ('BASICO', '1° a 8° Basico'),
+                    ('MEDIO_1_2', '1° y 2° Medio'),
+                    ('MEDIO_3_4', '3° y 4° Medio'),
                 ],
                 default='BASICO',
                 max_length=20,

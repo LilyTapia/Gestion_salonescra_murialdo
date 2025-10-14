@@ -101,51 +101,77 @@
                   {% endfor %}
                 </div>
               {% endif %}
-              {% for room_block in day.room_blocks %}
-                <div class="calendar-entry calendar-entry--{{ room_block.room.code|lower }}">
-                  <div class="entry-heading">Salon {{ room_block.room.code }}</div>
 
-                  {% if room_block.reserved_blocks %}
-                    <div class="entry-section">
-                      <div class="entry-section-title">Reservado</div>
-                      {% for block_item in room_block.reserved_blocks %}
-                        <div class="entry-line entry-line--reserved">
-                          <span class="block-chip block-chip--reserved">{{ block_item.label }} ({{ block_item.time_label }})</span>
-                          {% if block_item.reservation %}
-                            <span class="entry-info">{{ block_item.reservation.teacher }}{% if block_item.reservation.course %} &middot; {{ block_item.reservation.course }}{% endif %}{% if block_item.reservation.subject %} &middot; {{ block_item.reservation.subject }}{% endif %}</span>
-                          {% endif %}
-                        </div>
-                      {% endfor %}
-                    </div>
-                  {% elif room_block.reservations %}
-                    {% for item in room_block.reservations %}
-                      <div class="entry-line">
-                        <span class="entry-time">{{ item.time_range }}</span>
-                        <span class="entry-info">{{ item.teacher }}{% if item.course %} &middot; {{ item.course }}{% endif %}{% if item.subject %} &middot; {{ item.subject }}{% endif %}</span>
-                      </div>
+              {% if day.has_schedule %}
+                <div class="day-schedule" data-day="{{ day.date|date:'Y-m-d' }}">
+                  <div class="schedule-room-switch">
+                    {% for schedule in day.room_schedules %}
+                      <button type="button" class="room-switch-btn{% if forloop.first %} is-active{% endif %}" data-room="{{ schedule.room.code }}">Salón {{ schedule.room.code }}</button>
                     {% endfor %}
-                  {% else %}
-                    <div class="entry-empty">Sin reservas</div>
-                  {% endif %}
-
-                  {% if room_block.available_blocks %}
-                    <div class="entry-section entry-section--available">
-                      <div class="entry-section-title">Disponible:</div>
-                      <div class="block-chip-list">
-                        {% for block_item in room_block.available_blocks %}
-                          <span class="block-chip">{{ block_item.label }} ({{ block_item.time_label }})</span>
+                  </div>
+                  <div class="room-schedule-container">
+                    {% for schedule in day.room_schedules %}
+                      <div class="room-schedule-panel{% if forloop.first %} is-active{% endif %}" data-room="{{ schedule.room.code }}">
+                        {% for block in schedule.blocks %}
+                          <div class="schedule-row {% if block.status == 'reserved' %}is-reserved{% else %}is-available{% endif %}">
+                            <div class="schedule-row-info">
+                              <span class="block-label">{{ block.label }}</span>
+                              <span class="block-time">{{ block.time_label }}</span>
+                            </div>
+                            {% if block.status == 'reserved' and block.reservation %}
+                              <div class="schedule-row-reservation">
+                                <span class="cell-title">{{ block.reservation.teacher }}</span>
+                                <span class="cell-subtitle">
+                                  {% if block.reservation.course %}{{ block.reservation.course }}{% endif %}
+                                  {% if block.reservation.course and block.reservation.subject %} · {% endif %}
+                                  {% if block.reservation.subject %}{{ block.reservation.subject }}{% endif %}
+                                </span>
+                              </div>
+                            {% else %}
+                              <div class="schedule-row-reservation">
+                                <span class="cell-title">Disponible</span>
+                              </div>
+                            {% endif %}
+                          </div>
                         {% endfor %}
                       </div>
-                    </div>
-                  {% endif %}
+                    {% endfor %}
+                  </div>
                 </div>
-              {% endfor %}
+              {% else %}
+                <div class="schedule-empty">Sin reservas ni bloques programados.</div>
+              {% endif %}
             {% endif %}
           </div>
         </div>
       {% endfor %}
     {% endfor %}
-    </div>
-  </div>
 </div>
+  </div>
+
+  {% if is_admin %}
+    <div class="navigation-section">
+      <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">Volver al inicio</a>
+    </div>
+  {% endif %}
+</div>
+<script>
+  document.addEventListener('click', function (event) {
+    if (!event.target.classList.contains('room-switch-btn')) {
+      return;
+    }
+    const button = event.target;
+    const scheduleWrapper = button.closest('.day-schedule');
+    if (!scheduleWrapper) {
+      return;
+    }
+    const roomCode = button.dataset.room;
+    scheduleWrapper.querySelectorAll('.room-switch-btn').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn === button);
+    });
+    scheduleWrapper.querySelectorAll('.room-schedule-panel').forEach(function (panel) {
+      panel.classList.toggle('is-active', panel.dataset.room === roomCode);
+    });
+  });
+</script>
 {% endblock %}
