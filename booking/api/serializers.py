@@ -5,6 +5,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from booking.models import Room, Material, RoomInventory, Reservation, ReservationItem, Blackout
 from booking.services import get_reserved_material_quantity
+from booking.dateutils import max_reservation_date
 
 User = get_user_model()
 
@@ -59,14 +60,10 @@ class ReservationSerializer(serializers.ModelSerializer):
         today = timezone.localdate()
         if date and date < today:
             raise serializers.ValidationError("La fecha de la reserva debe ser igual o posterior a hoy.")
-        request = self.context.get("request")
-        is_admin_user = False
-        if request and request.user.is_authenticated:
-            is_admin_user = request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()
-        if date and not is_admin_user:
-            max_allowed = today + _dt.timedelta(days=30)
+        if date:
+            max_allowed = max_reservation_date(today)
             if date > max_allowed:
-                raise serializers.ValidationError("Las reservas solo se permiten hasta con 30 dias de anticipacion.")
+                raise serializers.ValidationError("Las reservas solo se permiten hasta con 1 mes de anticipacion.")
         if start and end and start >= end:
             raise serializers.ValidationError("La hora de inicio debe ser menor que la de término.")
         # L-V 08:00–18:00

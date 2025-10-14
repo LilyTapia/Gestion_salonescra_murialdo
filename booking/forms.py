@@ -6,21 +6,12 @@ from django.utils import timezone
 import calendar
 import json
 from .models import Room, Material, Reservation, Blackout, RoomInventory, Subject, TeacherRole, Course, TeacherProfile
+from .constants import SUBJECTS_BY_LEVEL
+from .validators import validate_institutional_email
 
-BASIC_SUBJECT_NAMES = [
-    'Ciencias', 'Matematicas', 'Educacion Fisica', 'Lenguaje', 'Ingles',
-    'Artes', 'Tecnologia', 'Musica', 'Religion', 'Historia', 'Orientacion'
-]
-
-MEDIO_1_2_SUBJECT_NAMES = [
-    'Ingles', 'Tutoria', 'Matematicas', 'Educacion Fisica', 'Lenguaje', 'Biologia',
-    'Historia', 'Fisica', 'Quimica', 'Artes', 'Tecnologia', 'Religion', 'Orientacion'
-]
-
-MEDIO_3_4_SUBJECT_NAMES = [
-    'Tutoria', 'Lenguaje', 'Ingles', 'Matematicas', 'Modulo Geo3D', 'Taller Historia',
-    'Ciencias para la ciudadania', 'Modulo CompHist', 'Modulo InterpMus', 'TAF', 'Filosofia'
-]
+BASIC_SUBJECT_NAMES = SUBJECTS_BY_LEVEL['BASICO']
+MEDIO_1_2_SUBJECT_NAMES = SUBJECTS_BY_LEVEL['MEDIO_1_2']
+MEDIO_3_4_SUBJECT_NAMES = SUBJECTS_BY_LEVEL['MEDIO_3_4']
 
 def _course_stage(course_name):
     try:
@@ -232,7 +223,11 @@ class MaterialForm(forms.ModelForm):
         }
 
 class CustomUserCreationForm(UserCreationForm):
-    email = forms.EmailField(required=True, help_text='Requerido. Ingresa una direccion de email valida.')
+    email = forms.EmailField(
+        required=True,
+        help_text='Requerido. Usa tu correo institucional @murialdovalpo.cl.',
+        validators=[validate_institutional_email],
+    )
     first_name = forms.CharField(max_length=30, required=True, label='Nombre')
     last_name = forms.CharField(max_length=30, required=True, label='Apellidos')
     subjects = forms.ModelMultipleChoiceField(
@@ -266,6 +261,11 @@ class CustomUserCreationForm(UserCreationForm):
         self.fields['subjects'].queryset = Subject.objects.order_by('name')
         self.fields['roles'].queryset = TeacherRole.objects.order_by('name')
         self.fields['courses'].queryset = Course.objects.order_by('order', 'name')
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '')
+        validate_institutional_email(email)
+        return email
 
     def _save_profile_data(self, user):
         profile, _ = TeacherProfile.objects.get_or_create(user=user)
@@ -368,6 +368,11 @@ class AdminUserCreationForm(forms.ModelForm):
                 self.fields['subjects'].initial = profile.subjects.all()
                 self.fields['roles'].initial = profile.roles.all()
                 self.fields['courses'].initial = profile.courses.all()
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '')
+        validate_institutional_email(email)
+        return email
 
     def clean_password2(self):
         password1 = self.cleaned_data.get('password1')

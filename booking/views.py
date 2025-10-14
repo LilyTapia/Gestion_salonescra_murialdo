@@ -14,6 +14,7 @@ from django.db.models import Count, Sum, Q
 from collections import defaultdict
 from .models import Room, Material, RoomInventory, Reservation, ReservationItem, Blackout, Notification
 from .services import release_overdue_reservations, build_registration_metadata, get_reserved_material_quantity
+from .dateutils import max_reservation_date
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -69,19 +70,6 @@ def get_blocks_for_weekday(weekday_index):
             'end_time': time.fromisoformat(end_str),
         })
     return results
-
-
-def _max_booking_date(base_date):
-    """Return the furthest date allowed for reservations (1 month ahead)."""
-    if base_date.month == 12:
-        year = base_date.year + 1
-        month = 1
-    else:
-        year = base_date.year
-        month = base_date.month + 1
-    last_day = calendar.monthrange(year, month)[1]
-    day = min(base_date.day, last_day)
-    return date(year, month, day)
 
 
 def _match_reservation_blackouts(room, date_value, start_time, end_time):
@@ -159,9 +147,8 @@ def reservation_create(request):
                 messages.error(request, "La fecha de la reserva debe ser igual o posterior a hoy.")
                 return redirect('reservation_create')
 
-            max_allowed = _max_booking_date(today)
-            is_admin_user = request.user.is_staff or request.user.groups.filter(name='AdminBiblioteca').exists()
-            if not is_admin_user and date > max_allowed:
+            max_allowed = max_reservation_date(today)
+            if date > max_allowed:
                 messages.error(request, "Las reservas solo se permiten hasta con 1 mes de anticipación.")
                 return redirect('reservation_create')
 
@@ -294,8 +281,8 @@ def reservation_update(request, pk):
                 messages.error(request, "La fecha de la reserva debe ser igual o posterior a hoy.")
                 return redirect('reservation_update', pk=pk)
 
-            max_allowed = _max_booking_date(today)
-            if not is_admin_user and date_value > max_allowed:
+            max_allowed = max_reservation_date(today)
+            if date_value > max_allowed:
                 messages.error(request, "Las reservas solo se permiten hasta con 1 mes de anticipación.")
                 return redirect('reservation_update', pk=pk)
 
@@ -1375,8 +1362,6 @@ def export_reports_excel(request):
     wb.save(response)
     
     return response
-
-
 
 
 
