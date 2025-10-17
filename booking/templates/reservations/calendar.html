@@ -54,7 +54,7 @@
 
     {% for week in weeks %}
       {% for day in week %}
-        <div class="calendar-cell{% if not day.in_month %} is-outside{% endif %}{% if day.is_today %} is-today{% endif %}{% if day.is_weekend %} is-weekend{% endif %}{% if day.is_full_day_block %} is-full-block{% endif %}">
+        <div class="calendar-cell{% if not day.in_month %} is-outside{% endif %}{% if day.is_today %} is-today{% endif %}{% if day.is_weekend %} is-weekend{% endif %}{% if day.is_full_day_block %} is-full-block{% endif %}" data-weekday="{{ day.weekday_label }}">
           <div class="day-number">{{ day.date|date:"j" }}</div>
           <div class="day-content">
             {% if day.is_full_day_block %}
@@ -121,11 +121,12 @@
                             {% if block.status == 'reserved' and block.reservation %}
                               <div class="schedule-row-reservation">
                                 <span class="cell-title">{{ block.reservation.teacher }}</span>
-                                <span class="cell-subtitle">
-                                  {% if block.reservation.course %}{{ block.reservation.course }}{% endif %}
-                                  {% if block.reservation.course and block.reservation.subject %} · {% endif %}
-                                  {% if block.reservation.subject %}{{ block.reservation.subject }}{% endif %}
-                                </span>
+                                {% if block.reservation.course %}
+                                  <span class="cell-subtitle">{{ block.reservation.course }}</span>
+                                {% endif %}
+                                {% if block.reservation.subject %}
+                                  <span class="cell-subtitle">{{ block.reservation.subject }}</span>
+                                {% endif %}
                               </div>
                             {% else %}
                               <div class="schedule-row-reservation">
@@ -172,6 +173,42 @@
     scheduleWrapper.querySelectorAll('.room-schedule-panel').forEach(function (panel) {
       panel.classList.toggle('is-active', panel.dataset.room === roomCode);
     });
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .schedule-row {
+        /* Asegura que el flexbox no intente justificar el espacio,
+           permitiendo que los hijos se ajusten a su tamaño definido. */
+        justify-content: flex-start !important;
+        box-sizing: border-box !important; /* Asegura que el ancho 100% incluya padding/border y no desborde. */
+      }
+      .schedule-row-info {
+        /* Fija el ancho de la sección de la hora para que no se encoja ni se estire. */
+        flex: 0 0 auto !important;
+       margin-right: 0.5rem !important; /* Espacio consistente a la derecha de la hora */
+        /* Anulamos reglas conflictivas del CSS original */
+        flex-basis: auto !important;
+        margin-left: 0 !important;
+      }
+      .schedule-row-reservation {
+        /* Permite que esta sección crezca para ocupar el espacio sobrante
+           y se encoja si es necesario, evitando que se desborde. */
+        flex: 1 1 0 !important;
+        min-width: 0; /* CRUCIAL: Permite que el texto se trunque en un contenedor flex. */
+        text-align: left !important; /* Alinea el texto a la izquierda para un mejor truncamiento */
+        align-items: flex-start !important;
+      }
+      .room-schedule-panel .schedule-row.is-reserved .cell-title,
+      .room-schedule-panel .schedule-row.is-reserved .cell-subtitle {
+        display: block !important; /* Asegura que se apilen verticalmente */
+        white-space: nowrap !important; /* Mantiene el texto en una sola línea */
+        overflow: hidden !important; /* Oculta el texto que se desborda */
+        text-overflow: ellipsis !important; /* Añade '...' al final del texto cortado */
+      }
+    `;
+    document.head.appendChild(style);
   });
 </script>
 {% endblock %}

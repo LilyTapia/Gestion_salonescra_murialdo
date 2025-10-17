@@ -716,6 +716,7 @@ def reservation_monthly(request):
                 'in_month': day.month == display_date.month,
                 'is_today': day == today,
                 'is_weekend': day.weekday() >= 5,
+                'weekday_label': WEEKDAY_NAMES[day.weekday()],
                 'room_blocks': [] if is_full_day_block else room_blocks,
                 'blackouts': room_level_blackouts if not is_full_day_block else [],
                 'full_block_blackouts': full_block_blackouts,

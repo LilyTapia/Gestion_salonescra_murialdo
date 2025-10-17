@@ -212,8 +212,27 @@ th {
 
 .reservation-card-actions__form {
   margin: 0;
+  display: flex;
 }
 
+.reservation-card-actions > a.btn,
+.reservation-card-actions__form {
+  flex: 0 0 180px;
+}
+
+.reservation-card-actions > a.btn,
+.reservation-card-actions__form .btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.reservation-card-actions .btn {
+  min-width: 0;
+}
 .materials {
   margin-top: 0.5rem;
 }
@@ -2196,13 +2215,19 @@ body.panel-home .title-center{
 .calendar-wrapper {
   overflow-x: auto;
   padding-bottom: 1rem;
+  display: flex;
+  justify-content: center;
 }
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  width: 100%;
   gap: 0.75rem;
-  min-width: 900px;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  min-width: 1120px;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: start;
 }
 
 .calendar-header-cell {
@@ -2211,7 +2236,7 @@ body.panel-home .title-center{
   font-size: 0.85rem;
   text-align: center;
   color: #1f5faa;
-  padding-bottom: 0.25rem;
+  padding-bottom: 0.35rem;
 }
 
 .calendar-cell {
@@ -2225,6 +2250,11 @@ body.panel-home .title-center{
   gap: 0.65rem;
   box-shadow: 0 6px 18px rgba(43, 74, 153, 0.08);
   transition: transform 0.2s ease;
+}
+
+.calendar-cell::before {
+  display: none;
+  content: none;
 }
 
 .calendar-cell:hover {
@@ -2363,28 +2393,6 @@ body.panel-home .title-center{
 .entry-line--reserved .entry-info {
   color: #1f2937;
 }
-@media (max-width: 900px) {
-  .calendar-grid {
-    min-width: 760px;
-  }
-}
-
-@media (max-width: 768px) {
-  .calendar-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .calendar-controls .btn-ghost {
-    width: 100%;
-    text-align: center;
-  }
-}
-
-
-
-
-
 .calendar-cell.has-blackouts:not(.is-holiday) {
   border-color: #c7d6ff;
   background: #f5f7ff;
@@ -2435,7 +2443,8 @@ body.panel-home .title-center{
 .schedule-room-switch {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: center;
 }
 
 .room-switch-btn {
@@ -2447,6 +2456,9 @@ body.panel-home .title-center{
   font-weight: 600;
   color: #1f5faa;
   cursor: pointer;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
   transition: all 0.2s ease;
 }
 
@@ -2475,11 +2487,14 @@ body.panel-home .title-center{
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 0.75rem;
   padding: 0.55rem 0.7rem;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid #eef2ff;
   background: #f9fbff;
+  width: 100%;
+  margin: 0 0.1rem;
 }
 
 .schedule-row.is-available {
@@ -2496,7 +2511,10 @@ body.panel-home .title-center{
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  min-width: 120px;
+  flex: 1 1 58%;
+  max-width: 58%;
+  min-width: 0;
+  margin-right: 0.75rem;
 }
 
 .block-label {
@@ -2515,6 +2533,29 @@ body.panel-home .title-center{
   flex-direction: column;
   gap: 0.2rem;
   text-align: right;
+  flex: 0 1 160px;
+  max-width: 160px;
+  min-width: 140px;
+  align-items: flex-end;
+  justify-content: center;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.schedule-row-reservation .cell-title {
+  width: 100%;
+  max-width: 100%;
+  text-align: inherit;
+  white-space: inherit;
+  overflow-wrap: anywhere;
+}
+
+.schedule-row-reservation .cell-subtitle {
+  width: 100%;
+  max-width: 100%;
+  text-align: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .cell-title {
@@ -2525,11 +2566,36 @@ body.panel-home .title-center{
 
 .schedule-row.is-reserved .cell-title {
   color: #b15c00;
+  white-space: normal;
+}
+
+.schedule-row.is-reserved .cell-subtitle {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.schedule-row.is-available .cell-title {
+  white-space: nowrap;
+}
+
+.schedule-row.is-available .schedule-row-reservation .cell-title {
+  text-align: center;
+  overflow-wrap: normal;
+}
+
+.schedule-row.is-available .schedule-row-reservation {
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  word-break: normal;
 }
 
 .cell-subtitle {
   font-size: 0.7rem;
   color: #566078;
+  line-height: 1.25;
+  word-break: normal;
+  white-space: normal;
 }
 
 .schedule-empty {
@@ -2545,6 +2611,10 @@ body.panel-home .title-center{
   }
   .schedule-row-reservation {
     text-align: left;
+    align-items: flex-start;
+  }
+  .schedule-row.is-available .cell-title {
+    white-space: normal;
   }
 }
 
@@ -2636,121 +2706,31 @@ body.panel-home .title-center{
 
 
 /* Responsive header navigation */
-.header-bar {
-  position: relative;
-}
-
-.nav-toggle {
-  display: none;
-  position: relative;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.nav-toggle span {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  height: 3px;
-  border-radius: 999px;
-  background: #ffffff;
-  transition: transform 0.25s ease, opacity 0.25s ease;
-}
-
-.nav-toggle span:nth-child(1) { top: 14px; }
-.nav-toggle span:nth-child(2) { top: 20px; }
-.nav-toggle span:nth-child(3) { top: 26px; }
-
-.nav-toggle.is-open {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.45);
-}
-
-.nav-toggle.is-open span:nth-child(1) {
-  transform: translateY(6px) rotate(45deg);
-}
-
-.nav-toggle.is-open span:nth-child(2) {
-  opacity: 0;
-}
-
-.nav-toggle.is-open span:nth-child(3) {
-  transform: translateY(-6px) rotate(-45deg);
-}
-
 @media (max-width: 1024px) {
-  .nav-toggle {
-    display: flex;
-    margin-left: auto;
+  .site-header .header-bar {
+    grid-template-columns: 1fr !important;
+    row-gap: 0.75rem;
+    text-align: center;
+  }
+
+  .site-header .logo-block,
+  .site-header .title-center,
+  .site-header .header-actions {
+    justify-self: center !important;
   }
 
   .site-header .header-actions {
-    position: fixed;
-    right: 14px;
-    top: 68px;
-    left: 14px;
-    background: linear-gradient(140deg, rgba(4, 52, 120, 0.97), rgba(5, 177, 194, 0.97));
-    border-radius: 18px;
-    padding: 1.1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.65rem;
-    transform-origin: top right;
-    transform: translateY(-8px) scale(0.95);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    box-shadow: 0 24px 48px rgba(12, 48, 120, 0.28);
-  }
-
-  .site-header .header-actions.is-open {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
-
-  .site-header .header-actions a {
-    display: block;
-    width: 100%;
-    color: #ffffff;
-    padding: 0.55rem 0.75rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  }
-
-  .site-header .header-actions a:hover,
-  .site-header .header-actions a:focus-visible {
-    background: rgba(255, 255, 255, 0.22);
-  }
-
-  body.menu-open {
-    overflow: hidden;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    position: static;
   }
 }
 
-@media (max-width: 768px) {
-  .header-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .logo-block {
+@media (max-width: 600px) {
+  .site-header .header-actions a {
     width: 100%;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .title-center {
-    width: 100%;
-    text-align: left;
+    text-align: center;
   }
 }
 
@@ -2758,6 +2738,18 @@ body.panel-home .title-center{
 @media (max-width: 1200px) {
   .calendar-grid {
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.65rem;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .calendar-cell {
+    padding: 0.65rem;
+    gap: 0.5rem;
+  }
+
+  .calendar-current {
+    font-size: 1.15rem;
   }
 }
 
@@ -2765,6 +2757,7 @@ body.panel-home .title-center{
   .calendar-controls {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
   }
 
   .calendar-controls .btn-ghost {
@@ -2772,25 +2765,73 @@ body.panel-home .title-center{
   }
 
   .calendar-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .calendar-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 0.55rem;
+    min-width: 0;
+    margin: 0;
   }
 
   .calendar-header-cell {
     display: none;
   }
 
-  .calendar-cell {
-    min-height: auto;
+  .calendar-cell::before {
+    display: block;
+    content: attr(data-weekday);
+    font-weight: 600;
+    color: #1f5faa;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
   }
 
   .day-number {
-    font-size: 1rem;
+    margin-left: 0;
+    font-size: 1.05rem;
+  }
+
+  .calendar-cell {
+    padding: 0.6rem;
+  }
+
+  .day-content {
+    gap: 0.4rem;
+  }
+
+  .schedule-row {
+    gap: 0.6rem;
+    padding: 0.5rem 0.55rem;
+  }
+
+  .schedule-row-info {
+    min-width: 110px;
+  }
+
+  .block-label,
+  .cell-title {
+    font-size: 0.76rem;
+  }
+
+  .cell-subtitle,
+  .block-time {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-grid {
+    grid-template-columns: 1fr;
+    margin: 0;
+  }
+
+  .calendar-cell {
+    min-height: auto;
+    padding: 0.55rem 0.6rem;
+  }
+
+  .day-number {
+    font-size: 1.15rem;
   }
 
   .day-blackouts {
@@ -2826,19 +2867,16 @@ body.panel-home .title-center{
 
 @media (max-width: 768px) {
   .site-header .header-bar {
-    grid-template-columns: auto 1fr auto !important;
+    grid-template-columns: 1fr !important;
     padding: 10px 12px;
+    row-gap: 0.75rem;
   }
-  .site-header .logo-block {
-    justify-content: flex-start !important;
-    width: auto;
-    gap: 10px;
-  }
-  .nav-toggle {
-    order: 3;
+  .site-header .logo-block,
+  .title-center,
+  .site-header .header-actions {
+    justify-self: center !important;
   }
   .title-center {
-    order: 2;
     display: block !important;
     text-align: center;
   }
@@ -2849,9 +2887,16 @@ body.panel-home .title-center{
     display: none;
   }
   .site-header .header-actions {
-    top: 60px;
-    right: 12px;
-    min-width: 200px;
+    position: static;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    width: 100%;
+  }
+  .site-header .header-actions a {
+    width: 100%;
+    text-align: center;
   }
   .calendar-wrapper {
     overflow-x: visible;
